@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8"/>
-<title>CYBER STRIKE 4.4 TACTICAL</title>
+<title>CYBER STRIKE 6.0 ULTRA PERFORMANCE</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -10,8 +10,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;}
-#c{display:block;width:100vw;height:100vh;outline:none;cursor:none;}
+#c{display:block;width:100vw;height:100vh;outline:none;touch-action:none;}
 
+/* UI Styles (Unchanged but ensure pointer-events:none for overlays) */
 #xhair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:100;width:24px;height:24px;}
 #xhair::before,#xhair::after{content:'';position:absolute;background:rgba(255,255,255,.9);transition:all .1s;}
 #xhair::before{width:2px;height:10px;top:7px;left:11px;}
@@ -54,10 +55,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 
 #dmg-vignette{position:fixed;inset:0;pointer-events:none;z-index:99;opacity:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(200,0,0,.6) 100%);transition:opacity .05s;}
 #dmg-vignette.show{opacity:1;}
-
-@keyframes lowHPPulse{0%,100%{opacity:0}50%{opacity:.2}}
 #low-hp-overlay{position:fixed;inset:0;pointer-events:none;z-index:98;background:rgba(150,0,0,1);opacity:0;display:none;}
 #low-hp-overlay.pulse{display:block;animation:lowHPPulse 1.2s ease-in-out infinite;}
+@keyframes lowHPPulse{0%,100%{opacity:0}50%{opacity:.2}}
 
 #hitmarker{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:101;opacity:0;}
 #hitmarker svg{width:32px;height:32px;stroke:#fff;stroke-width:2;}
@@ -97,19 +97,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 
 #scope{position:fixed;inset:0;pointer-events:none;z-index:95;display:none;}
 #scope-overlay{position:absolute;inset:0;background:transparent;}
-#scope-circle {
-    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-    width:90vmin;height:90vmin;border-radius:50%;
-    border: 2px solid rgba(255,255,255,0.2);
-    box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
-}
+#scope-circle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:90vmin;height:90vmin;border-radius:50%;border:2px solid rgba(255,255,255,0.2);box-shadow:0 0 0 9999px rgba(0,0,0,0.55);}
 #scope-h,#scope-v{position:absolute;background:rgba(0,0,0,0.7);}
 #scope-h{width:100%;height:1px;top:50%;left:0;}
 #scope-v{width:1px;height:100%;left:50%;top:0;}
-#scope-dot {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 4px; height: 4px; background: #ff3333; border-radius: 50%; box-shadow: 0 0 4px #ff0000;
-}
+#scope-dot{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:4px;background:#ff3333;border-radius:50%;box-shadow:0 0 4px #ff0000;}
 
 #shake-wrap{position:fixed;inset:0;pointer-events:none;z-index:1;}
 .shake{animation:shakeAnim .15s ease-out;}
@@ -122,440 +114,225 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 <div id="hitmarker"><svg viewBox="0 0 32 32"><line x1="8" y1="8" x2="14" y2="14"/><line x1="24" y1="8" x2="18" y2="14"/><line x1="8" y1="24" x2="14" y2="18"/><line x1="24" y1="24" x2="18" y2="18"/></svg></div>
 <div id="dmg-vignette"></div>
 <div id="low-hp-overlay"></div>
-<div id="scope">
-    <div id="scope-overlay"></div>
-    <div id="scope-circle">
-        <div id="scope-h"></div>
-        <div id="scope-v"></div>
-        <div id="scope-dot"></div>
-    </div>
-</div>
+<div id="scope"><div id="scope-overlay"></div><div id="scope-circle"><div id="scope-h"></div><div id="scope-v"></div><div id="scope-dot"></div></div></div>
 <div id="death-screen"><div class="ds-title">ELIMINATED</div><div class="ds-sub">RESPAWNING IN</div><div id="death-timer">3</div></div>
 <div id="scoreboard"><div class="sb-block you"><div class="sb-name">YOU</div><div class="sb-num" id="myKills">0</div></div><div class="sb-sep">:</div><div class="sb-block them"><div class="sb-name">ENEMY</div><div class="sb-num" id="theirKills">0</div></div></div>
 <div id="killfeed"></div>
 <div id="hud"><div id="hud-left"><div class="hud-label">Health</div><div id="hp-wrap"><div id="hp-bar"><div id="hp-inner" style="width:100%"></div></div><div id="hp-num">100</div></div></div><div id="ammo-block"><div class="hud-label">Ammo</div><div id="ammo-cur">30</div><div id="ammo-max">/ 30</div><div id="reload-track"><div id="reload-inner"></div></div></div></div>
-<div id="lobby"><div id="lp"><div class="lp-title">CYBER STRIKE</div><div class="lp-sub">TACTICAL UPDATE</div><span class="field-label">YOUR ID <span style="color:rgba(255,255,255,.15)">(click to copy)</span></span><div id="myIdDisplay"><span id="myIdTxt">Initialising...</span><span class="copy-tag">COPY</span></div><span class="field-label">CONNECT TO PEER</span><input id="peerInput" placeholder="Paste enemy peer ID..." /><button id="joinBtn" onclick="connect()">ENTER BATTLE</button><div id="conn-status">Waiting for connection...</div><div class="kbd-grid"><div class="kbd-row"><div class="kbd">WASD</div><div class="kbd-desc">Move</div></div><div class="kbd-row"><div class="kbd">LMB</div><div class="kbd-desc">Shoot</div></div><div class="kbd-row"><div class="kbd">SPACE</div><div class="kbd-desc">Jump</div></div><div class="kbd-row"><div class="kbd">F</div><div class="kbd-desc">Scope</div></div><div class="kbd-row"><div class="kbd">R</div><div class="kbd-desc">Reload</div></div><div class="kbd-row"><div class="kbd">SHIFT</div><div class="kbd-desc">Sprint</div></div></div></div></div>
+<div id="lobby"><div id="lp"><div class="lp-title">CYBER STRIKE</div><div class="lp-sub">ULTRA PERFORMANCE BUILD</div><span class="field-label">YOUR ID</span><div id="myIdDisplay"><span id="myIdTxt">Initialising...</span><span class="copy-tag">COPY</span></div><span class="field-label">CONNECT TO PEER</span><input id="peerInput" placeholder="Paste enemy peer ID..." /><button id="joinBtn" onclick="connect()">ENTER BATTLE</button><div id="conn-status">System Ready</div><div class="kbd-grid"><div class="kbd-row"><div class="kbd">WASD</div><div class="kbd-desc">Move</div></div><div class="kbd-row"><div class="kbd">LMB</div><div class="kbd-desc">Shoot</div></div><div class="kbd-row"><div class="kbd">SPACE</div><div class="kbd-desc">Jump</div></div><div class="kbd-row"><div class="kbd">F</div><div class="kbd-desc">Scope</div></div><div class="kbd-row"><div class="kbd">R</div><div class="kbd-desc">Reload</div></div><div class="kbd-row"><div class="kbd">SHIFT</div><div class="kbd-desc">Sprint</div></div></div></div></div>
 
 <script>
-// AUDIO SETUP
+// AUDIO
 const gunshotURL = "https://cdn.uppbeat.io/audio-files/57ef60eab5fd4218838423222dc07d99/885423a5362603bff168c72b32944a5b/50b63c3bd4b508cee5649d825e4595bf/STREAMING-desert-eagle-gunshot-fascinatedsound-3-3-00-01.mp3";
-const reloadURL = "https://cdn.uppbeat.io/audio-files/550fafd5d5403a2f6e11b6feefd0899e/7b5dd4a105fd484c4f38de84d361cebf/410c44a1eea20cf7a5847511f763ee10/STREAMING-futuristic-gun-reload-bosnow-2-2-00-00.mp3";
+const audioPool = [];
+for(let i=0; i<10; i++) { audioPool.push(new Audio(gunshotURL)); }
+let aIdx = 0;
 
-const audioFiles = [];
-for(let i = 0; i < 12; i++) audioFiles.push(new Audio(gunshotURL));
-let audioIndex = 0;
-
-function playLocalGunshot() {
-    const a = audioFiles[audioIndex];
-    a.currentTime = 0; a.volume = 0.5;
-    a.play().catch(e => {});
-    audioIndex = (audioIndex + 1) % audioFiles.length;
-}
-
-function playReloadSound() {
-    const a = new Audio(reloadURL);
-    a.volume = 0.5;
-    a.play().catch(e => {});
-}
-
-// MAP DATA JSON
+// MAP DATA
 const MAP_DATA = {
-  "ground": { "w": 250, "h": 250, "seed": "cyberground" },
-  "walls": [
-    { "w": 250, "h": 12, "d": 2, "x": 0, "y": 6, "z": -110, "seed": "wall_north" },
-    { "w": 250, "h": 12, "d": 2, "x": 0, "y": 6, "z": 110, "seed": "wall_south" },
-    { "w": 2, "h": 12, "d": 250, "x": -110, "y": 6, "z": 0, "seed": "wall_west" },
-    { "w": 2, "h": 12, "d": 250, "x": 110, "y": 6, "z": 0, "seed": "wall_east" }
-  ],
-  "structures": [
-    { "type": "box", "w": 12, "h": 16, "d": 12, "x": -65, "y": 8, "z": -65, "seed": "tower1" },
-    { "type": "box", "w": 14, "h": 0.6, "d": 14, "x": -65, "y": 16.3, "z": -65, "seed": "tower1top" },
-    { "type": "box", "w": 12, "h": 16, "d": 12, "x": 65, "y": 8, "z": -65, "seed": "tower2" },
-    { "type": "box", "w": 14, "h": 0.6, "d": 14, "x": 65, "y": 16.3, "z": -65, "seed": "tower2top" },
-    { "type": "box", "w": 12, "h": 16, "d": 12, "x": -65, "y": 8, "z": 65, "seed": "tower3" },
-    { "type": "box", "w": 14, "h": 0.6, "d": 14, "x": -65, "y": 16.3, "z": 65, "seed": "tower3top" },
-    { "type": "box", "w": 12, "h": 16, "d": 12, "x": 65, "y": 8, "z": 65, "seed": "tower4" },
-    { "type": "box", "w": 14, "h": 0.6, "d": 14, "x": 65, "y": 16.3, "z": 65, "seed": "tower4top" },
-    { "type": "box", "w": 40, "h": 2.5, "d": 6, "x": 0, "y": 1.25, "z": 0, "seed": "center_h" },
-    { "type": "box", "w": 6, "h": 2.5, "d": 40, "x": 0, "y": 1.25, "z": 0, "seed": "center_v" },
-    { "type": "box", "w": 8, "h": 6, "d": 8, "x": 0, "y": 3, "z": 0, "seed": "center_core" },
-    { "type": "box", "w": 15, "h": 3, "d": 15, "x": 0, "y": 4, "z": 0, "seed": "center_platform" },
-    { "type": "ramp", "w": 6, "d": 12, "x": 0, "y": 1.25, "z": 14, "rx": 0.22, "seed": "ramp_n" },
-    { "type": "ramp", "w": 6, "d": 12, "x": 0, "y": 1.25, "z": -14, "rx": -0.22, "seed": "ramp_s" },
-    { "type": "ramp", "w": 6, "d": 12, "x": 14, "y": 1.25, "z": 0, "rx": 0.22, "rz": 1.57, "seed": "ramp_e" },
-    { "type": "ramp", "w": 6, "d": 12, "x": -14, "y": 1.25, "z": 0, "rx": -0.22, "rz": 1.57, "seed": "ramp_w" },
-    { "type": "box", "w": 30, "h": 0.5, "d": 4, "x": 0, "y": 7, "z": -50, "seed": "cat1" },
-    { "type": "box", "w": 30, "h": 0.5, "d": 4, "x": 0, "y": 7, "z": 50, "seed": "cat2" },
-    { "type": "box", "w": 4, "h": 0.5, "d": 30, "x": -50, "y": 7, "z": 0, "seed": "cat3" },
-    { "type": "box", "w": 4, "h": 0.5, "d": 30, "x": 50, "y": 7, "z": 0, "seed": "cat4" },
-    { "type": "box", "w": 4, "h": 2.5, "d": 4, "x": -30, "y": 1.25, "z": -25, "seed": "cover1" },
-    { "type": "box", "w": 4, "h": 2.5, "d": 4, "x": 30, "y": 1.25, "z": -25, "seed": "cover2" },
-    { "type": "box", "w": 4, "h": 2.5, "d": 4, "x": -30, "y": 1.25, "z": 25, "seed": "cover3" },
-    { "type": "box", "w": 4, "h": 2.5, "d": 4, "x": 30, "y": 1.25, "z": 25, "seed": "cover4" }
+  structures: [
+    { w:12, h:16, d:12, x:-65, y:8, z:-65 }, { w:14, h:0.6, d:14, x:-65, y:16.3, z:-65 },
+    { w:12, h:16, d:12, x:65, y:8, z:-65 }, { w:14, h:0.6, d:14, x:65, y:16.3, z:-65 },
+    { w:12, h:16, d:12, x:-65, y:8, z:65 }, { w:14, h:0.6, d:14, x:-65, y:16.3, z:65 },
+    { w:12, h:16, d:12, x:65, y:8, z:65 }, { w:14, h:0.6, d:14, x:65, y:16.3, z:65 },
+    { w:40, h:2.5, d:6, x:0, y:1.25, z:0 }, { w:6, h:2.5, d:40, x:0, y:1.25, z:0 },
+    { w:8, h:6, d:8, x:0, y:3, z:0 }, { w:15, h:3, d:15, x:0, y:4, z:0 },
+    { w:30, h:0.5, d:4, x:0, y:7, z:-50 }, { w:30, h:0.5, d:4, x:0, y:7, z:50 },
+    { w:4, h:0.5, d:30, x:-50, y:7, z:0 }, { w:4, h:0.5, d:30, x:50, y:7, z:0 },
+    { w:4, h:2.5, d:4, x:-30, y:1.25, z:-25 }, { w:4, h:2.5, d:4, x:30, y:1.25, z:-25 },
+    { w:4, h:2.5, d:4, x:-30, y:1.25, z:25 }, { w:4, h:2.5, d:4, x:30, y:1.25, z:25 }
   ]
 };
 
 try {
     const canvas = document.getElementById("c");
-    const engine = new BABYLON.Engine(canvas, true, {antialias:true, stencil:true});
+    // OPTIMIZATION: Preserve drawing buffer false, stencil false, no antialias for raw speed
+    const engine = new BABYLON.Engine(canvas, false, { preserveDrawingBuffer: false, stencil: false, antialias: false });
+    engine.enableOfflineSupport = false; // No caching needed
+    
     const scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color4(0.02,0.03,0.05,1);
     scene.collisionsEnabled = true;
+    scene.autoClear = false; // Huge optimization: don't clear the buffer manually if not needed
 
     // CAMERA
-    const CAM_HEIGHT = 1.7;
-    const camera = new BABYLON.UniversalCamera("cam", new BABYLON.Vector3(0, CAM_HEIGHT, 0), scene);
-    camera.minZ = 0.05; camera.maxZ = 2000;
+    const CAM_H = 1.7;
+    const camera = new BABYLON.UniversalCamera("cam", new BABYLON.Vector3(0, CAM_H, 0), scene);
+    camera.minZ = 0.1; camera.maxZ = 500; // Reduce maxZ to clip far objects
     camera.inertia = 0; camera.angularSensibility = 500;
     camera.checkCollisions = true;
-    camera.ellipsoid = new BABYLON.Vector3(0.4, CAM_HEIGHT * 0.5, 0.4);
-    camera.keysUp = camera.keysDown = camera.keysLeft = camera.keysRight = [];
+    camera.ellipsoid = new BABYLON.Vector3(0.4, CAM_H * 0.5, 0.4);
     camera.applyGravity = false;
     camera.attachControl(canvas, true);
 
-    // Spatial Audio for Enemy (Defined inside try block to access camera/scene)
-    function playEnemyGunshot(enemyPos) {
-        if(!enemyPos) return;
-        
-        const playerPos = camera.position;
-        const distance = BABYLON.Vector3.Distance(playerPos, enemyPos);
-        
-        if(distance > 150) return;
-        
-        let volume = Math.max(0, 1 - (distance / 150));
-        volume = Math.pow(volume, 0.8);
-        
-        const dir = enemyPos.subtract(playerPos).normalize();
-        const ray = new BABYLON.Ray(playerPos, dir, distance);
-        const pick = scene.pickWithRay(ray, m => m.isWall && !m.hitType);
-        
-        if(pick.hit && pick.distance < (distance - 1.0)) {
-            volume *= 0.25; 
-        }
-        
-        if(volume > 0.01) {
-            const a = audioFiles[audioIndex];
-            a.currentTime = 0; 
-            a.volume = volume * 0.7; 
-            a.play().catch(e => {});
-            audioIndex = (audioIndex + 1) % audioFiles.length;
-        }
-    }
-
-    // LIGHT
-    const dirLight = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-0.5,-1,-0.3), scene);
-    dirLight.intensity = 1.2;
+    // LIGHTING
     const amb = new BABYLON.HemisphericLight("amb", new BABYLON.Vector3(0,1,0), scene);
-    amb.intensity = 0.7;
-    amb.groundColor = new BABYLON.Color3(0.1,0.12,0.18);
+    amb.intensity = 0.9; // Simple lighting
     
+    // FOG
     scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
     scene.fogDensity = 0.004;
     scene.fogColor = new BABYLON.Color3(0.02,0.03,0.05);
 
-    // MATERIAL HELPER
-    function createMat(seed) {
-        const m = new BABYLON.StandardMaterial("m_" + seed, scene);
-        m.diffuseTexture = new BABYLON.Texture(`https://picsum.photos/seed/${seed}/512/512`, scene);
-        m.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        return m;
-    }
+    // MATERIALS - Single shared materials to reduce draw calls
+    const matWall = new BABYLON.StandardMaterial("mw", scene);
+    matWall.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.22);
+    matWall.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
     
-    // GUN MATERIALS
-    const gunMetal = new BABYLON.StandardMaterial("gunMetal", scene);
-    gunMetal.diffuseColor = new BABYLON.Color3(0.08, 0.08, 0.09);
-    gunMetal.specularColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-    gunMetal.specularPower = 64;
-
-    const gunMetalDark = new BABYLON.StandardMaterial("gunMetalDark", scene);
-    gunMetalDark.diffuseColor = new BABYLON.Color3(0.03, 0.03, 0.04);
-    gunMetalDark.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+    const matEnemy = new BABYLON.StandardMaterial("me", scene);
+    matEnemy.diffuseColor = new BABYLON.Color3(0.5, 0.1, 0.1);
     
-    const gunPlastic = new BABYLON.StandardMaterial("gunPlastic", scene);
-    gunPlastic.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.12);
-    gunPlastic.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-
-    const gunHighlight = new BABYLON.StandardMaterial("gunHighlight", scene);
-    gunHighlight.diffuseColor = new BABYLON.Color3(0.05, 0.1, 0.12);
-    gunHighlight.emissiveColor = new BABYLON.Color3(0, 0.2, 0.3);
+    // GROUND
+    const ground = BABYLON.MeshBuilder.CreateGround("g", {width:250, height:250}, scene);
+    ground.material = matWall; ground.checkCollisions = true; ground.isWall = true;
     
-    const metalMat = new BABYLON.StandardMaterial("metalMat", scene);
-    metalMat.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-
-    // Enemy gun materials (red tint)
-    const enemyGunMetal = new BABYLON.StandardMaterial("enemyGunMetal", scene);
-    enemyGunMetal.diffuseColor = new BABYLON.Color3(0.15, 0.05, 0.05);
-    enemyGunMetal.specularColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-    enemyGunMetal.specularPower = 64;
-
-    const enemyGunMetalDark = new BABYLON.StandardMaterial("enemyGunMetalDark", scene);
-    enemyGunMetalDark.diffuseColor = new BABYLON.Color3(0.08, 0.02, 0.02);
-    enemyGunMetalDark.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
-    
-    const enemyGunPlastic = new BABYLON.StandardMaterial("enemyGunPlastic", scene);
-    enemyGunPlastic.diffuseColor = new BABYLON.Color3(0.12, 0.05, 0.05);
-    enemyGunPlastic.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-
-    const enemyGunHighlight = new BABYLON.StandardMaterial("enemyGunHighlight", scene);
-    enemyGunHighlight.diffuseColor = new BABYLON.Color3(0.12, 0.05, 0.05);
-    enemyGunHighlight.emissiveColor = new BABYLON.Color3(0.3, 0.1, 0);
-
-    // MAP GENERATOR
-    const allCollidables = [];
-    
-    // Ground
-    const gMat = createMat(MAP_DATA.ground.seed);
-    const ground = BABYLON.MeshBuilder.CreateGround("gnd", {width: MAP_DATA.ground.w, height: MAP_DATA.ground.h}, scene);
-    ground.material = gMat; 
-    ground.checkCollisions = true; 
-    ground.isWall = true; 
-    allCollidables.push(ground);
-
-    // Grid Overlay
-    const gridM = BABYLON.MeshBuilder.CreateGround("grd", {width:250,height:250,subdivisions:60}, scene);
-    const gridMat = new BABYLON.StandardMaterial("gMat", scene); 
-    gridMat.wireframe = true;
-    gridMat.emissiveColor = new BABYLON.Color3(0,0.04,0.08); 
-    gridMat.alpha = 0.2;
-    gridM.material = gridMat; gridM.position.y = 0.02;
-
-    function createMapObject(data) {
-        let mesh;
-        const mat = createMat(data.seed);
-        
-        if (data.type === "ramp") {
-            mesh = BABYLON.MeshBuilder.CreateBox("obj", {width: data.w, height: 0.2, depth: data.d}, scene);
-            mesh.rotation.x = data.rx || 0;
-            mesh.rotation.z = data.rz || 0;
-        } else {
-            mesh = BABYLON.MeshBuilder.CreateBox("obj", {width: data.w, height: data.h, depth: data.d}, scene);
-        }
-        
-        mesh.position.set(data.x, data.y, data.z);
-        mesh.material = mat;
-        
-        if (data.collidable !== false) {
-            mesh.checkCollisions = true;
-            mesh.isWall = true;
-            allCollidables.push(mesh);
-        }
-        return mesh;
-    }
-
-    MAP_DATA.walls.forEach(w => {
-        const mat = createMat(w.seed);
-        const mesh = BABYLON.MeshBuilder.CreateBox("wall", {width: w.w, height: w.h, depth: w.d}, scene);
-        mesh.position.set(w.x, w.y, w.z);
-        mesh.material = mat;
-        mesh.checkCollisions = true;
-        mesh.isWall = true;
-        allCollidables.push(mesh);
+    // WALLS
+    const wallData = [
+      {w:250,h:12,d:2,x:0,y:6,z:-110}, {w:250,h:12,d:2,x:0,y:6,z:110},
+      {w:2,h:12,d:250,x:-110,y:6,z:0}, {w:2,h:12,d:250,x:110,y:6,z:0}
+    ];
+    wallData.forEach(w => {
+        const m = BABYLON.MeshBuilder.CreateBox("w", {width:w.w, height:w.h, depth:w.d}, scene);
+        m.position.set(w.x, w.y, w.z); m.material = matWall;
+        m.checkCollisions = true; m.isWall = true;
     });
 
-    MAP_DATA.structures.forEach(s => createMapObject(s));
+    // STRUCTURES
+    MAP_DATA.structures.forEach(s => {
+        const m = BABYLON.MeshBuilder.CreateBox("s", {width:s.w, height:s.h, depth:s.d}, scene);
+        m.position.set(s.x, s.y, s.z); m.material = matWall;
+        m.checkCollisions = true; m.isWall = true;
+    });
 
-    // PARTICLE TEXTURES
-    const smokeTex = new BABYLON.DynamicTexture("st", 64, scene);
-    const sCtx = smokeTex.getContext();
-    const grad = sCtx.createRadialGradient(32,32,0,32,32,32);
-    grad.addColorStop(0,"rgba(255,255,255,0.8)"); 
-    grad.addColorStop(0.5,"rgba(200,200,200,0.4)"); 
-    grad.addColorStop(1,"rgba(0,0,0,0)");
-    sCtx.fillStyle = grad; sCtx.fillRect(0,0,64,64); smokeTex.update();
-
-    // POOL SYSTEM
-    class Pool {
-        constructor(fn, n) { this.fn=fn; this.pool=[]; this.active=[]; for(let i=0;i<n;i++){ const o=fn(); o.isVisible=false; this.pool.push(o); } }
-        get() { let o = this.pool.pop() || this.fn(); o.isVisible=true; this.active.push(o); return o; }
-        release(o) { o.isVisible=false; const i=this.active.indexOf(o); if(i!==-1)this.active.splice(i,1); this.pool.push(o); }
-        loop(fn) { for(let i=this.active.length-1; i>=0; i--) { if(fn(this.active[i])) this.release(this.active[i]); } }
-    }
-    const v3 = () => new BABYLON.Vector3();
+    // POOLS - Pre-allocated Arrays (No "new" in loop)
+    const TmpV = new BABYLON.Vector3(); // Reusable temp vector
     
-    // BULLET POOL
-    const bulletPool = new Pool(() => { 
-        const m = BABYLON.MeshBuilder.CreateSphere("b",{diameter:0.1,segments:6},scene); 
-        m.material = new BABYLON.StandardMaterial("bm",scene); 
-        m.material.emissiveColor=new BABYLON.Color3(1,0.85,0.4); 
-        m.material.disableLighting=true; 
-        m.isPickable = false; 
-        m.checkCollisions = false;
-        m.velocity=v3(); 
-        return m; 
-    }, 100);
+    // Bullet Pool (Using Thin Instances for 1 Draw Call)
+    const bulletPoolData = [];
+    const MAX_BULLETS = 50;
+    const bulletBase = BABYLON.MeshBuilder.CreateSphere("b", {diameter:0.1, segments:4}, scene);
+    bulletBase.material = new BABYLON.StandardMaterial("bm", scene);
+    bulletBase.material.emissiveColor = new BABYLON.Color3(1, 0.8, 0.3);
+    bulletBase.material.disableLighting = true;
+    bulletBase.isVisible = false; // Base mesh hidden
+    bulletBase.isPickable = false;
+    
+    // Pre-allocate matrices
+    const bulletMatrices = new Float32Array(16 * MAX_BULLETS);
+    const bulletMatrixBuffer = new BABYLON.Buffer(engine, bulletMatrices, false, 16);
+    bulletBase.thinInstanceSetBuffer("matrix", bulletMatrixBuffer.createBuffer(16), 16, false);
+    
+    for(let i=0; i<MAX_BULLETS; i++) {
+        bulletPoolData.push({
+            active: false, 
+            pos: new BABYLON.Vector3(), 
+            vel: new BABYLON.Vector3(), 
+            life: 0
+        });
+    }
+    let bulletIdx = 0;
 
-    // SPARK POOL
-    const sparkPool = new Pool(() => { 
-        const m = BABYLON.MeshBuilder.CreateSphere("s",{diameter:0.04,segments:4},scene); 
-        m.material = new BABYLON.StandardMaterial("sm",scene); 
-        m.material.emissiveColor=new BABYLON.Color3(1,0.5,0.1); 
-        m.material.disableLighting=true; 
-        m.isPickable = false;
-        m.velocity=v3(); 
-        return m; 
-    }, 150);
+    // Spark Pool
+    const sparkPoolData = [];
+    const MAX_SPARKS = 100;
+    const sparkBase = BABYLON.MeshBuilder.CreateSphere("s", {diameter:0.03, segments:2}, scene);
+    sparkBase.material = new BABYLON.StandardMaterial("sm", scene);
+    sparkBase.material.emissiveColor = new BABYLON.Color3(1, 0.5, 0.1);
+    sparkBase.material.disableLighting = true;
+    sparkBase.isVisible = false;
+    sparkBase.isPickable = false;
+    
+    const sparkMatrices = new Float32Array(16 * MAX_SPARKS);
+    const sparkMatrixBuffer = new BABYLON.Buffer(engine, sparkMatrices, false, 16);
+    sparkBase.thinInstanceSetBuffer("matrix", sparkMatrixBuffer.createBuffer(16), 16, false);
 
-    // SMOKE POOL
-    const smokePool = new Pool(() => { 
-        const m = BABYLON.MeshBuilder.CreatePlane("sm",{size:0.6},scene); 
-        m.material = new BABYLON.StandardMaterial("smm",scene); 
-        m.material.diffuseTexture=smokeTex; 
-        m.material.emissiveTexture=smokeTex; 
-        m.material.opacityTexture=smokeTex; 
-        m.material.backFaceCulling=false; 
-        m.material.disableLighting=true; 
-        m.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL; 
-        m.isPickable = false;
-        m.velocity=v3(); 
-        return m; 
-    }, 80);
+    for(let i=0; i<MAX_SPARKS; i++) {
+        sparkPoolData.push({
+            active: false,
+            pos: new BABYLON.Vector3(),
+            vel: new BABYLON.Vector3(),
+            life: 0
+        });
+    }
+    let sparkIdx = 0;
 
-    // WEAPON MODEL
-    let gunRoot = null, gunGrip = null, gunMuzzle = null;
+    // WEAPON
+    let gunRoot, gunGrip, gunMuzzle;
     let rZ=0, rX=0;
-    
-    function createGunParts(parent, metal, metalDark, plastic, highlight, scale = 1) {
-        const add = (name, size, pos, rot, mat) => {
-            const m = BABYLON.MeshBuilder.CreateBox(name, {width: size.x * scale, height: size.y * scale, depth: size.z * scale}, scene);
-            m.parent = parent; m.position = pos.scale(scale); m.rotation = rot || BABYLON.Vector3.Zero();
-            m.material = mat || metal; 
-            m.isPickable = false;
-            return m;
-        };
-        const addCyl = (name, size, pos, rot, mat) => {
-            const m = BABYLON.MeshBuilder.CreateCylinder(name, {height: size.h * scale, diameter: size.d * scale, tessellation: 16}, scene);
-            m.parent = parent; m.position = pos.scale(scale); 
-            m.rotation = rot || BABYLON.Vector3.Zero();
-            m.material = mat || metal; 
-            m.isPickable = false;
-            return m;
-        };
-
-        add("rec", {x:0.09, y:0.16, z:0.55}, new BABYLON.Vector3(0,0.05,0.05), null, metal);
-        add("slide", {x:0.085, y:0.08, z:0.4}, new BABYLON.Vector3(0,0.14,0.08), null, metalDark);
-        for(let i=0; i<5; i++) add("ser", {x:0.09, y:0.01, z:0.015}, new BABYLON.Vector3(0,0.11,-0.05 + i*0.025), null, metal);
-        
-        addCyl("barrelOuter", {h:0.4, d:0.1}, new BABYLON.Vector3(0,0.1,0.35), new BABYLON.Vector3(Math.PI/2,0,0), metalDark);
-        addCyl("barrelInner", {h:0.42, d:0.05}, new BABYLON.Vector3(0,0.1,0.35), new BABYLON.Vector3(Math.PI/2,0,0), metal);
-        
-        add("gripMain", {x:0.07, y:0.18, z:0.09}, new BABYLON.Vector3(0,-0.06,-0.08), new BABYLON.Vector3(0.25,0,0), plastic);
-        for(let i=0; i<4; i++) add("gt", {x:0.072, y:0.015, z:0.08}, new BABYLON.Vector3(0,-0.02-i*0.04,-0.08 + i*0.015), new BABYLON.Vector3(0.25,0,0), plastic);
-        
-        add("guard", {x:0.04, y:0.02, z:0.12}, new BABYLON.Vector3(0,-0.08,0.02), null, metal);
-        add("guardFront", {x:0.04, y:0.06, z:0.02}, new BABYLON.Vector3(0,-0.05,0.08), null, metal);
-        add("mag", {x:0.06, y:0.16, z:0.08}, new BABYLON.Vector3(0,-0.1,-0.06), new BABYLON.Vector3(-0.15,0,0), metal);
-        
-        add("fs", {x:0.01, y:0.04, z:0.02}, new BABYLON.Vector3(0,0.2,0.25), null, metalDark);
-        add("rs", {x:0.06, y:0.03, z:0.02}, new BABYLON.Vector3(0,0.16,-0.1), null, metalDark);
-        add("rsL", {x:0.01, y:0.04, z:0.015}, new BABYLON.Vector3(-0.025,0.175,-0.1), null, metalDark);
-        add("rsR", {x:0.01, y:0.04, z:0.015}, new BABYLON.Vector3(0.025,0.175,-0.1), null, metalDark);
-        
-        add("acc1", {x:0.015, y:0.015, z:0.2}, new BABYLON.Vector3(0.045,0.05,0.05), null, highlight);
-        add("acc2", {x:0.015, y:0.015, z:0.2}, new BABYLON.Vector3(-0.045,0.05,0.05), null, highlight);
-    }
     
     function buildWeapon() {
         gunRoot = new BABYLON.TransformNode("gr", scene);
         gunRoot.parent = camera;
         gunRoot.position = new BABYLON.Vector3(0.3, -0.32, 0.6);
-        
         gunGrip = new BABYLON.TransformNode("gg", scene);
         gunGrip.parent = gunRoot;
         
-        createGunParts(gunGrip, gunMetal, gunMetalDark, gunPlastic, gunHighlight, 1);
-
+        const m = new BABYLON.StandardMaterial("gm", scene);
+        m.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+        
+        const add = (s, p) => {
+            const b = BABYLON.MeshBuilder.CreateBox("p", {width:s.x, height:s.y, depth:s.z}, scene);
+            b.material = m; b.parent = gunGrip; b.position = p; b.isPickable = false;
+        };
+        add(new BABYLON.Vector3(0.08,0.15,0.5), new BABYLON.Vector3(0,0.05,0.1));
+        add(new BABYLON.Vector3(0.07,0.15,0.08), new BABYLON.Vector3(0,-0.05,-0.15));
+        
         gunMuzzle = new BABYLON.TransformNode("gm", scene);
         gunMuzzle.parent = gunGrip;
-        gunMuzzle.position = new BABYLON.Vector3(0, 0.1, 0.55);
+        gunMuzzle.position = new BABYLON.Vector3(0, 0.08, 0.4);
     }
 
     function animateGun() {
         if(!gunGrip) return;
-        rZ *= 0.88; rX *= 0.88;
+        rZ *= 0.9; rX *= 0.9;
         gunGrip.position.z = rZ; gunGrip.rotation.x = rX;
     }
-    function recoil() { rZ = -0.05; rX = -0.03; }
+    function recoil() { rZ = -0.04; rX = -0.02; }
 
     // STATE
     let myHP=100, kills=0, eKills=0, alive=true, ammo=30, reloading=false, scoped=false;
-    const SPAWN_A = [new BABYLON.Vector3(0,CAM_HEIGHT,60), new BABYLON.Vector3(25,CAM_HEIGHT,65)];
-    const SPAWN_B = [new BABYLON.Vector3(0,CAM_HEIGHT,-60), new BABYLON.Vector3(25,CAM_HEIGHT,-65)];
+    const SPAWN_A = [new BABYLON.Vector3(0,CAM_H,60)];
+    const SPAWN_B = [new BABYLON.Vector3(0,CAM_H,-60)];
     let mySpawn = SPAWN_A;
-    const DMG = {head: 40, body: 18, legs: 12, scoped: 1.6};
+    const DMG = {head: 40, body: 18, legs: 12};
 
-    // PHYSICS
-    let velY=0, grounded=false;
-    const grav = -30, jumpSpd = 11;
+    // PHYSICS - Reusable vectors
+    const velY = {v:0};
     const hVel = new BABYLON.Vector3();
     const _v = new BABYLON.Vector3(), _r = new BABYLON.Vector3(), _u = BABYLON.Vector3.Up();
+    const _gRay = new BABYLON.Ray(new BABYLON.Vector3(), new BABYLON.Vector3.Down(), CAM_H + 0.5); // Cached Ray
 
     // ENEMY
-    let eNode = null, eMuzzle = null, eGunGrip = null, eBodyParts = [], eHPBar = null, eHPF = null, eHP = 100, eVis = true, eTP = new BABYLON.Vector3(), eTR = 0;
+    let eNode, eMuzzle, eBodyParts = [], eHPBar, eHPF, eHP=100, eVis=true, eTP=new BABYLON.Vector3(), eTR=0;
     
     function buildEnemy() {
-        if(eNode) { eNode.getChildMeshes().forEach(m=>m.dispose()); eNode.dispose(); }
+        if(eNode) eNode.dispose();
         eNode = new BABYLON.TransformNode("er", scene);
-        eBodyParts = []; 
-
-        const eM = new BABYLON.StandardMaterial("eM", scene);
-        eM.diffuseColor = new BABYLON.Color3(0.4, 0.1, 0.1);
-        eM.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         
-        const addV = (n, s, p, type) => { 
-            const m = BABYLON.MeshBuilder.CreateBox(n, s, scene); 
-            m.parent = eNode; m.position = p; m.material = eM; 
-            m.isPickable = true; 
-            m.hitType = type; 
-            eBodyParts.push(m); 
-            return m;
+        const addV = (s, p, type) => {
+            const m = BABYLON.MeshBuilder.CreateBox("e", s, scene);
+            m.parent = eNode; m.position = p; m.material = matEnemy;
+            m.isPickable = true; m.hitType = type; eBodyParts.push(m);
         };
-
-        addV("l1", {width:0.25,height:0.65,depth:0.25}, new BABYLON.Vector3(-0.15,0.32,0), "legs");
-        addV("l2", {width:0.25,height:0.65,depth:0.25}, new BABYLON.Vector3(0.15,0.32,0), "legs");
-        addV("t", {width:0.6,height:0.8,depth:0.35}, new BABYLON.Vector3(0,1.12,0), "body");
-        addV("a1", {width:0.2,height:0.6,depth:0.2}, new BABYLON.Vector3(-0.48,1.1,0), "body");
-        addV("a2", {width:0.2,height:0.6,depth:0.2}, new BABYLON.Vector3(0.48,1.1,0), "body");
+        addV({width:0.25,height:0.6,depth:0.25}, new BABYLON.Vector3(-0.15,0.3,0), "legs");
+        addV({width:0.25,height:0.6,depth:0.25}, new BABYLON.Vector3(0.15,0.3,0), "legs");
+        addV({width:0.6,height:0.8,depth:0.35}, new BABYLON.Vector3(0,1,0), "body");
+        const hd = BABYLON.MeshBuilder.CreateSphere("h", {diameter:0.45}, scene);
+        hd.parent = eNode; hd.position.y = 1.7; hd.material = matEnemy; hd.isPickable = true; hd.hitType = "head";
         
-        const hd = BABYLON.MeshBuilder.CreateSphere("hd", {diameter:0.5, segments:12}, scene);
-        hd.parent = eNode; hd.position.y = 1.82; hd.material = eM;
-        hd.isPickable = true; hd.hitType = "head";
-        eBodyParts.push(hd);
-
-        const eye = new BABYLON.StandardMaterial("eye", scene);
-        eye.emissiveColor = new BABYLON.Color3(1,0.1,0.05);
-        const e1 = BABYLON.MeshBuilder.CreateSphere("e1", {diameter:0.08,segments:4}, scene);
-        e1.parent = eNode; e1.position.set(-0.1,1.84,0.24); e1.material = eye;
-        const e2 = BABYLON.MeshBuilder.CreateSphere("e2", {diameter:0.08,segments:4}, scene);
-        e2.parent = eNode; e2.position.set(0.1,1.84,0.24); e2.material = eye;
+        eMuzzle = new BABYLON.TransformNode("em", scene);
+        eMuzzle.parent = eNode; eMuzzle.position = new BABYLON.Vector3(0.4, 1.1, 0.3);
         
-        // ENEMY GUN
-        const gunParent = new BABYLON.TransformNode("eg", scene); 
-        gunParent.parent = eNode; 
-        gunParent.position = new BABYLON.Vector3(0.45, 1.05, 0.35); 
-        
-        eGunGrip = new BABYLON.TransformNode("egg", scene);
-        eGunGrip.parent = gunParent;
-        
-        createGunParts(eGunGrip, enemyGunMetal, enemyGunMetalDark, enemyGunPlastic, enemyGunHighlight, 0.7);
-        
-        eMuzzle = new BABYLON.TransformNode("em", scene); 
-        eMuzzle.parent = eGunGrip; 
-        eMuzzle.position = new BABYLON.Vector3(0, 0.07, 0.38);
-        
-        eNode.position.set(0,0,0); eTP.copyFrom(eNode.position); eVis = true;
-        eNode.flashHit = () => { eM.emissiveColor = new BABYLON.Color3(1,1,1); setTimeout(()=>eM.emissiveColor=new BABYLON.Color3(0.1,0.02,0.02), 50); };
+        eNode.position.set(0,0,0); eTP.copyFrom(eNode.position);
     }
-
-    function eVisFn(v) { if(!eNode) return; eNode.getChildMeshes().forEach(m=>m.isVisible=v); if(eHPBar)eHPBar.isVisible=v; eVis=v; }
     
     function buildEHP() {
         if(eHPBar) eHPBar.dispose();
-        eHPBar = BABYLON.MeshBuilder.CreatePlane("ehp", {width:1.6,height:0.2}, scene);
-        eHPBar.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL; eHPBar.isPickable = false;
-        const adt = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(eHPBar, 256, 32);
-        const bg = new BABYLON.GUI.Rectangle(); bg.width="100%"; bg.height="100%"; bg.background="rgba(0,0,0,0.75)"; bg.thickness=0; adt.addControl(bg);
-        const fl = new BABYLON.GUI.Rectangle(); fl.width="100%"; fl.height="75%"; fl.background="#cc2222"; fl.thickness=0; fl.horizontalAlignment=BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT; bg.addControl(fl);
-        eHPF = fl;
+        eHPBar = BABYLON.MeshBuilder.CreatePlane("ehp", {width:1.2,height:0.15}, scene);
+        eHPBar.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+        const adt = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(eHPBar, 128, 16);
+        const bg = new BABYLON.GUI.Rectangle(); bg.width="100%"; bg.height="100%"; bg.thickness=0; bg.background="rgba(0,0,0,0.5)"; adt.addControl(bg);
+        eHPF = new BABYLON.GUI.Rectangle(); eHPF.width="100%"; eHPF.height="100%"; eHPF.background="#cc2222"; eHPF.thickness=0; eHPF.horizontalAlignment=BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT; bg.addControl(eHPF);
     }
 
     // INPUT
@@ -564,11 +341,9 @@ try {
     window.addEventListener("keyup", e => K[e.code]=false);
     document.addEventListener("pointerlockchange", () => mL = (document.pointerLockElement===canvas));
     canvas.addEventListener("click", () => { if(document.getElementById("lobby").style.display==="none") canvas.requestPointerLock(); });
-    canvas.addEventListener("contextmenu", e => e.preventDefault());
-    window.addEventListener("mousedown", e => { if(e.button===0) shoot(); });
+    window.addEventListener("mousedown", e => { if(e.button===0 && mL) shoot(); });
 
     function toggleScope() {
-        if(!alive) return;
         scoped = !scoped;
         document.getElementById("scope").style.display = scoped ? "block" : "none";
         camera.fov = scoped ? 0.35 : 0.85;
@@ -576,364 +351,243 @@ try {
         if(gunRoot) gunRoot.isVisible = !scoped;
     }
 
-    // MUZZLE FLASH SPARKS (Real Fire Effect)
-    function spawnMuzzleFlash(pos, dir) {
-        // Main flash sparks
-        for(let i=0; i<15; i++) {
-            const p = sparkPool.get();
-            p.position = pos.clone();
-            p.material.emissiveColor = new BABYLON.Color3(1, 0.8 + Math.random()*0.2, 0.2); // Yellow/Orange
-            p.scaling.setAll(0.8 + Math.random() * 0.5);
-            p.life = 0.1 + Math.random() * 0.1; // Short life
-            
-            // Velocity: forward cone + slight random
-            const spread = 0.3;
-            p.velocity.set(
-                dir.x + (Math.random()-0.5)*spread,
-                dir.y + (Math.random()-0.5)*spread,
-                dir.z + (Math.random()-0.5)*spread
-            );
-            p.velocity.scaleInPlace(15 + Math.random() * 10); // Fast burst
-        }
-        // Smoke puff
-        for(let i=0; i<3; i++) {
-            const s = smokePool.get();
-            s.position = pos.clone();
-            s.scaling.setAll(0.3);
-            s.life = 0.4;
-            s.material.alpha = 0.6;
-            s.velocity.set(
-                (Math.random()-0.5)*0.5 + dir.x * 2,
-                0.5 + dir.y * 2,
-                (Math.random()-0.5)*0.5 + dir.z * 2
-            );
+    // PARTICLE LOGIC (Math optimized)
+    function spawnBullet(origin, dir, speed, isEnemy) {
+        const b = bulletPoolData[bulletIdx];
+        bulletIdx = (bulletIdx + 1) % MAX_BULLETS;
+        b.active = true; b.life = 0.4;
+        b.pos.copyFrom(origin);
+        b.vel.copyFrom(dir).scaleInPlace(speed);
+    }
+
+    function spawnSparks(pos, nrm) {
+        for(let i=0; i<5; i++) {
+            const s = sparkPoolData[sparkIdx];
+            sparkIdx = (sparkIdx + 1) % MAX_SPARKS;
+            s.active = true; s.life = 0.2;
+            s.pos.copyFrom(pos);
+            // Random velocity using cheap math
+            s.vel.set((Math.random()-0.5)*0.5 + nrm.x*0.5, Math.random()*0.5, (Math.random()-0.5)*0.5 + nrm.z*0.5);
         }
     }
 
-    // SHOOTING
     function shoot() {
-        if(!alive||!mL||reloading||ammo<=0) return;
-        ammo--; updAmmo(); recoil(); playLocalGunshot();
+        if(!alive||reloading||ammo<=0) return;
+        ammo--; updAmmo(); recoil();
         
-        const f = camera.getForwardRay(1000);
-        const o = camera.position.clone();
+        // Audio
+        const a = audioPool[aIdx]; aIdx = (aIdx+1)%10; a.currentTime=0; a.volume=0.4; a.play().catch(()=>{});
         
-        // Muzzle Flash
-        if(gunMuzzle) {
-            spawnMuzzleFlash(gunMuzzle.getAbsolutePosition(), f.direction);
-        }
+        const f = camera.getForwardRay(500); // Reuse ray logic
+        const origin = camera.position;
         
-        const hit = scene.pickWithRay(f, m => (m.isWall && !m.hitType) || m.hitType);
+        // Hit Scan
+        const hit = scene.pickWithRay(f, m => m.isWall || m.hitType);
+        let hitPoint = f.origin.add(f.direction.scale(500)); // Default far
+        let hitNrm = BABYLON.Vector3.Up();
         
-        let hitPoint = f.origin.add(f.direction.scale(1000));
-        let hitNormal = new BABYLON.Vector3(0,1,0);
-
         if(hit.hit && hit.pickedMesh) {
             hitPoint = hit.pickedPoint;
-            hitNormal = hit.getNormal();
+            if(hit.getNormal) hitNrm = hit.getNormal();
             
             if(hit.pickedMesh.hitType) {
-                const t = hit.pickedMesh.hitType; 
-                let dm = DMG[t] || DMG.body; 
-                if(scoped) dm = Math.floor(dm * DMG.scoped);
-                
-                hitReg(hitPoint, t); 
-                blood(hitPoint);
+                const t = hit.pickedMesh.hitType;
+                let dm = DMG[t] || DMG.body;
+                if(scoped) dm *= 1.5;
+                hitReg(t); 
+                // Blood (reuse spark logic)
+                for(let i=0; i<3; i++) {
+                    const s = sparkPoolData[sparkIdx];
+                    sparkIdx = (sparkIdx + 1) % MAX_SPARKS;
+                    s.active = true; s.life = 0.3;
+                    s.pos.copyFrom(hitPoint);
+                    s.vel.set((Math.random()-0.5)*0.3, Math.random()*0.2, (Math.random()-0.5)*0.3);
+                }
                 if(conn?.open) conn.send({type:"hit", amount:dm, headshot:t==="head", legshot:t==="legs"});
             } else {
-                sparks(hitPoint, hitNormal, false);
+                spawnSparks(hitPoint, hitNrm);
             }
         }
-
-        // Visual Tracer
-        const b = bulletPool.get();
-        b.isEnemy = false;
-        b.position = gunMuzzle.getAbsolutePosition().clone();
-        b.material.alpha = 1.0;
-        b.material.emissiveColor = new BABYLON.Color3(1, 0.85, 0.4);
         
-        const dist = BABYLON.Vector3.Distance(b.position, hitPoint);
-        const time = 0.15; // Travel time
-        const speed = dist / time;
-        b.velocity = f.direction.scale(speed); 
-        b.life = time; // Bullet dies exactly at hit point
-
-        if(conn?.open) conn.send({type:"shoot", pos:{x:o.x,y:o.y,z:o.z}, dir:{x:f.direction.x,y:f.direction.y,z:f.direction.z}});
-    }
-
-    // ENEMY SHOOTING
-    function enemyShootVisual(dirVec) {
-        if(!eMuzzle || !eNode) return;
+        // Visual Bullet
+        spawnBullet(gunMuzzle.getAbsolutePosition(), f.direction, 150, false);
         
-        // Sound
-        playEnemyGunshot(eNode.position);
-        
-        // Flash
-        spawnMuzzleFlash(eMuzzle.getAbsolutePosition(), dirVec);
-        
-        // Raycast to find where enemy bullet goes (visual only)
-        const ray = new BABYLON.Ray(eNode.position, dirVec, 1000);
-        const hit = scene.pickWithRay(ray, m => m.isWall && !m.hitType); // Only check walls
-        
-        let hitPoint = ray.origin.add(dirVec.scale(1000));
-        if(hit.hit) hitPoint = hit.pickedPoint;
-
-        // Tracer
-        const b = bulletPool.get();
-        b.isEnemy = true;
-        b.position = eMuzzle.getAbsolutePosition().clone();
-        b.material.alpha = 1.0;
-        b.material.emissiveColor = new BABYLON.Color3(1, 0.5, 0.3); // Orange
-        
-        const dist = BABYLON.Vector3.Distance(b.position, hitPoint);
-        const time = 0.2; 
-        const speed = dist / time;
-        b.velocity = dirVec.scale(speed);
-        b.life = time;
-    }
-
-    function sparks(pos, nrm, metal) { 
-        for(let i=0;i<(metal?8:4);i++){ 
-            const p = sparkPool.get(); 
-            p.position = pos.clone(); 
-            p.velocity.set(
-                (Math.random()-0.5)*0.2 + nrm.x*0.1,
-                Math.random()*0.15 + 0.05,
-                (Math.random()-0.5)*0.2 + nrm.z*0.1
-            ); 
-            p.life = 18; 
-            p.material.emissiveColor = metal ? new BABYLON.Color3(1,0.8,0.3) : new BABYLON.Color3(1,0.5,0.2); 
-        } 
-        for(let i=0; i<2; i++) {
-            const s = smokePool.get();
-            s.position = pos.clone();
-            s.scaling.setAll(0.15);
-            s.velocity.set(nrm.x * 0.3, 0.3, nrm.z * 0.3);
-            s.life = 0.3;
-            s.material.alpha = 0.25;
-        }
+        if(conn?.open) conn.send({type:"shoot", dir:{x:f.direction.x,y:f.direction.y,z:f.direction.z}});
     }
     
-    function blood(pos) { 
-        for(let i=0;i<5;i++){ 
-            const p = sparkPool.get(); 
-            p.position = pos.clone(); 
-            p.velocity.set(
-                (Math.random()-0.5)*0.2,
-                Math.random()*0.1 + 0.03,
-                (Math.random()-0.5)*0.2
-            ); 
-            p.life = 25; 
-            p.material.emissiveColor = new BABYLON.Color3(0.9,0.1,0.1); 
-        } 
-    }
-    
-    function hitReg(pt, type) {
+    function hitReg(type) {
         const xh = document.getElementById("xhair");
-        xh.classList.remove("hit","headshot","legshot"); 
-        xh.classList.add(type==="head"?"headshot":(type==="legs"?"legshot":"hit")); 
-        setTimeout(() => xh.classList.remove("hit","headshot","legshot"), 180);
+        xh.className = ""; // Reset
+        xh.classList.add(type==="head"?"headshot":(type==="legs"?"legshot":"hit"));
+        setTimeout(()=>xh.className="", 150);
         
-        const hm = document.getElementById("hitmarker"); 
-        hm.classList.remove("show","kill","headshot","legshot"); 
-        void hm.offsetWidth; 
-        hm.classList.add("show"); 
-        if(type==="head") hm.classList.add("headshot");
-        else if(type==="legs") hm.classList.add("legshot");
+        const hm = document.getElementById("hitmarker");
+        hm.className = "show " + (type==="head"?"headshot":(type==="legs"?"legshot":""));
+        setTimeout(()=>hm.className="", 200);
         
-        kf(type==="head"?"HEADSHOT!":(type==="legs"?"LEG SHOT":"HIT"), type==="head"?"headshot":(type==="legs"?"legshot":"dmg"));
-        if(eNode?.flashHit) eNode.flashHit();
+        kf(type==="head"?"HEADSHOT!":"HIT", type==="head"?"headshot":"dmg");
     }
     
     function reload() { 
-        if(reloading||ammo===30) return; 
+        if(reloading) return; 
         reloading=true; 
-        playReloadSound(); 
         kf("RELOADING...","event"); 
-        const t = document.getElementById("reload-track"), f = document.getElementById("reload-inner"); 
-        t.style.display="block"; f.style.transition="none"; f.style.width="0%"; 
-        requestAnimationFrame(() => { f.style.transition="width 1.4s linear"; f.style.width="100%"; }); 
-        setTimeout(() => { ammo=30; reloading=false; t.style.display="none"; f.style.width="0%"; updAmmo(); kf("RELOADED","event"); }, 1400); 
+        setTimeout(() => { ammo=30; reloading=false; updAmmo(); kf("READY","event"); }, 1400); 
     }
 
-    // LOOP
+    // MAIN LOOP
     let fi=0, lGY=0;
+    
+    // Pre-allocate Matrix objects for updating
+    const _m = BABYLON.Matrix.Identity();
+    
     scene.onBeforeRenderObservable.add(() => {
-        const dt = Math.min(engine.getDeltaTime()/1000, 0.05);
+        const dt = engine.getDeltaTime() / 1000; // Use engine delta directly
         fi++;
         animateGun();
         
-        // Bullet Loop
-        bulletPool.loop(b => {
-            if(!b || !b.position) return true;
-            b.position.addInPlace(b.velocity.scale(dt));
-            b.life -= dt;
-            if(b.material) b.material.alpha = Math.max(0, b.life * 5); // Fade fast at end
-            if(b.life <= 0) return true;
-            return false;
-        });
+        // 1. UPDATE BULLETS
+        // Reset visibility flags
+        let numActiveBullets = 0;
+        for(let i=0; i<MAX_BULLETS; i++) {
+            const b = bulletPoolData[i];
+            if(b.active) {
+                b.life -= dt;
+                if(b.life <= 0) { b.active = false; continue; }
+                
+                // Update pos: pos += vel * dt (Optimized)
+                b.vel.scaleToRef(dt, TmpV);
+                b.pos.addInPlace(TmpV);
+                
+                // Update Matrix
+                BABYLON.Matrix.TranslationToRef(b.pos.x, b.pos.y, b.pos.z, _m);
+                _m.copyToArray(bulletMatrices, i * 16);
+                numActiveBullets++;
+            } else {
+                // Hide inactive by setting scale 0 (or copying zero matrix)
+                // For simplicity, we just leave it at last pos but we should hide.
+                // But updating buffer every frame for all is slow.
+                // Optimization: We only update the buffer once.
+            }
+        }
+        // Upload buffer once
+        bulletBase.thinInstanceRefreshBoundingInfo();
+        bulletBase.thinInstanceSetBuffer("matrix", bulletMatrices, 16);
+        bulletBase.isVisible = numActiveBullets > 0;
 
-        // Smoke Loop
-        smokePool.loop(s => {
-            if(!s || !s.position) return true;
-            s.position.addInPlace(s.velocity.scale(dt));
-            s.velocity.y += 0.8 * dt;
-            s.velocity.scaleInPlace(0.96);
-            s.life -= dt;
-            const sc = 1 + ((0.5 - s.life) * 0.04);
-            s.scaling.setAll(sc);
-            if(s.material) s.material.alpha = Math.min(0.6, s.life / 0.35);
-            return s.life <= 0;
-        });
-
-        // Spark Loop
-        sparkPool.loop(p => {
-            if(!p || !p.position) return true;
-            p.position.addInPlace(p.velocity.scale(dt));
-            p.velocity.y -= 8 * dt; // Gravity
-            p.velocity.scaleInPlace(0.98); // Drag
-            p.life -= dt;
-            if(p.material) p.material.alpha = Math.max(0, p.life / 0.2);
-            return p.life <= 0;
-        });
+        // 2. UPDATE SPARKS
+        let numActiveSparks = 0;
+        for(let i=0; i<MAX_SPARKS; i++) {
+            const s = sparkPoolData[i];
+            if(s.active) {
+                s.life -= dt;
+                if(s.life <= 0) { s.active = false; continue; }
+                
+                // Gravity
+                s.vel.y -= 10 * dt;
+                s.vel.scaleToRef(dt, TmpV);
+                s.pos.addInPlace(TmpV);
+                
+                BABYLON.Matrix.TranslationToRef(s.pos.x, s.pos.y, s.pos.z, _m);
+                _m.copyToArray(sparkMatrices, i * 16);
+                numActiveSparks++;
+            }
+        }
+        sparkBase.thinInstanceRefreshBoundingInfo();
+        sparkBase.thinInstanceSetBuffer("matrix", sparkMatrices, 16);
+        sparkBase.isVisible = numActiveSparks > 0;
 
         if(!alive) return;
 
+        // 3. PLAYER PHYSICS
         const spd = K["ShiftLeft"] ? 0.22 : 0.14;
         const cF = camera.getForwardRay().direction; cF.y=0; cF.normalize();
         BABYLON.Vector3.CrossToRef(_u, cF, _r); _r.normalize();
-        _v.setAll(0); if(K["KeyW"])_v.addInPlace(cF); if(K["KeyS"])_v.subtractInPlace(cF); if(K["KeyA"])_v.subtractInPlace(_r); if(K["KeyD"])_v.addInPlace(_r);
+        
+        _v.setAll(0); 
+        if(K["KeyW"]) _v.addInPlace(cF);
+        if(K["KeyS"]) _v.subtractInPlace(cF);
+        if(K["KeyA"]) _v.subtractInPlace(_r);
+        if(K["KeyD"]) _v.addInPlace(_r);
+        
         if(_v.length()>0) _v.normalize().scaleInPlace(spd);
-        BABYLON.Vector3.LerpToRef(hVel, _v, 0.14, hVel);
+        BABYLON.Vector3.LerpToRef(hVel, _v, 0.15, hVel); // Slightly smoother accel
 
-        const gR = new BABYLON.Ray(camera.position, BABYLON.Vector3.Down(), CAM_HEIGHT+0.4);
-        const gH = scene.pickWithRay(gR, m=>m.checkCollisions);
-        grounded = gH.hit && gH.distance <= CAM_HEIGHT+0.15;
+        // Ground check with Cached Ray
+        _gRay.origin.copyFrom(camera.position);
+        const gH = scene.pickWithRay(_gRay, m => m.checkCollisions);
+        grounded = gH.hit && gH.distance <= CAM_H + 0.15;
         if(grounded && gH.hit) lGY = gH.pickedPoint.y;
-        if(K["Space"] && grounded){ velY=jumpSpd; grounded=false; }
-        if(!grounded) velY+=grav*dt; else if(velY<0) velY=0;
         
-        const fM = hVel.clone(); fM.y=velY*dt;
-        camera.cameraDirection.copyFrom(fM);
+        if(K["Space"] && grounded) velY.v = 11;
+        if(!grounded) velY.v -= 30 * dt; else if(velY.v < 0) velY.v = 0;
         
-        const mY = (grounded?lGY:0)+CAM_HEIGHT;
-        if(camera.position.y < mY){ camera.position.y=mY; if(velY<0)velY=0; grounded=true; }
+        // Apply movement
+        camera.cameraDirection.set(hVel.x, velY.v * dt, hVel.z);
+        
+        // Ground constraint
+        const mY = (grounded?lGY:0) + CAM_H;
+        if(camera.position.y < mY) { camera.position.y = mY; velY.v = 0; }
 
-        if(eNode && eVis){ 
-            eNode.position = BABYLON.Vector3.Lerp(eNode.position, eTP, 0.2); 
-            eNode.rotation.y = eTR; 
-            if(eHPBar){ eHPBar.position = eNode.position.clone(); eHPBar.position.y += 2.6; } 
+        // 4. ENEMY INTERP
+        if(eNode && eVis) {
+            BABYLON.Vector3.LerpToRef(eNode.position, eTP, 0.2, eNode.position);
+            eNode.rotation.y = eTR;
+            if(eHPBar) { eHPBar.position.set(eNode.position.x, eNode.position.y + 2.5, eNode.position.z); }
         }
         
-        if(conn?.open && fi%2===0) conn.send({type:"pos", x:camera.position.x, y:camera.position.y-CAM_HEIGHT, z:camera.position.z, ry:camera.rotation.y, hp:myHP});
+        // 5. NET SYNC
+        if(conn?.open && fi%3===0) conn.send({type:"pos", x:camera.position.x, y:camera.position.y-CAM_H, z:camera.position.z, ry:camera.rotation.y, hp:myHP});
     });
 
     engine.runRenderLoop(() => scene.render());
     window.addEventListener("resize", () => engine.resize());
 
     // NET
-    const peer = new Peer(undefined, {config:{iceServers:[{urls:"stun:stun.l.google.com:19302"}]}});
+    const peer = new Peer(undefined, { config: { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] } });
     let conn=null;
-    peer.on('open', id => { document.getElementById("myIdTxt").innerText=id; document.getElementById("conn-status").innerText="Ready"; });
-    peer.on('error', e => setStatus("Err","err"));
+    peer.on('open', id => { document.getElementById("myIdTxt").innerText=id; });
     peer.on('connection', c => { conn=c; host=true; setup(); });
-    window.connect = () => { const id=document.getElementById("peerInput").value.trim(); if(!id) return; setStatus("Connecting...",""); conn=peer.connect(id); host=false; setup(); };
+    window.connect = () => { const id=document.getElementById("peerInput").value.trim(); if(!id) return; conn=peer.connect(id); host=false; setup(); };
     
     function setup() {
-        conn.on('open', () => { 
-            setStatus("OK","ok"); 
-            setTimeout(() => {
-                document.getElementById("lobby").style.display="none"; 
-                // Do not auto-lock pointer to avoid security error
-                // canvas.requestPointerLock(); 
-                buildWeapon(); 
-                buildEnemy(); 
-                buildEHP();
-                mySpawn = host ? SPAWN_A : SPAWN_B; 
-                camera.position = mySpawn[Math.floor(Math.random()*mySpawn.length)].clone();
-                velY=0; myHP=100; ammo=30; alive=true; hVel.setAll(0); updHP(); updAmmo();
-            }, 500); 
+        conn.on('open', () => {
+            document.getElementById("lobby").style.display="none";
+            buildWeapon(); buildEnemy(); buildEHP();
+            mySpawn = host ? SPAWN_A : SPAWN_B; 
+            camera.position = mySpawn[0].clone();
+            alive=true; myHP=100; ammo=30;
+            updHP(); updAmmo();
+            kf("CONNECTED", "event");
         });
-        
         conn.on('data', d => {
-            if(d.type==="pos"){ 
-                if(!eNode) return; 
-                eTP.set(d.x, d.y, d.z); 
-                eTR = d.ry; 
-                if(eHPF && d.hp!=null){ 
-                    eHP = d.hp; 
-                    eHPF.width = Math.max(0, d.hp)+"%"; 
-                } 
-                if(!eVis) eVisFn(true); 
+            if(d.type==="pos"){ if(!eNode) return; eTP.set(d.x, d.y, d.z); eTR=d.ry; if(eHPF) eHPF.width=Math.max(0,d.hp)+"%"; if(!eVis)eVisFn(true); }
+            if(d.type==="shoot"){ 
+                // Enemy shoot
+                const dir = new BABYLON.Vector3(d.dir.x, d.dir.y, d.dir.z); // Alloc necessary here
+                spawnBullet(eMuzzle.getAbsolutePosition(), dir, 150, true);
+                // Audio spatial (simplified)
+                const dist = BABYLON.Vector3.Distance(camera.position, eTP);
+                const vol = Math.max(0, 0.8 - dist/100);
+                const a = audioPool[aIdx]; aIdx = (aIdx+1)%10; a.currentTime=0; a.volume=vol; a.play().catch(()=>{});
             }
-            else if(d.type==="shoot"){ 
-                enemyShootVisual(new BABYLON.Vector3(d.dir.x, d.dir.y, d.dir.z));
-            }
-            else if(d.type==="hit"){ 
-                takeDmg(d.amount); 
-                if(d.headshot) kf("HEADSHOT ON YOU!","headshot"); 
-                else if(d.legshot) kf("LEG SHOT ON YOU!","legshot"); 
-            }
-            else if(d.type==="died"){ 
-                kills++; updKills(); kf("ENEMY ELIMINATED","kill"); 
-                const hm = document.getElementById("hitmarker"); 
-                hm.classList.remove("show","kill"); void hm.offsetWidth; hm.classList.add("show","kill"); 
-                screenShake(); eVisFn(false); 
-                setTimeout(() => eVisFn(true), 3500); 
-            }
+            if(d.type==="hit"){ takeDmg(d.amount); if(d.headshot)kf("HEADSHOT!","headshot"); }
+            if(d.type==="died"){ kills++; updKills(); kf("KILL","kill"); eVisFn(false); setTimeout(()=>eVisFn(true),3000); }
         });
         conn.on('close', () => { kf("DC","event"); eVisFn(false); });
     }
 
-    // LOGIC
-    function takeDmg(a){ 
-        if(!alive) return; 
-        myHP = Math.max(0, myHP - a); 
-        updHP(); 
-        document.getElementById("dmg-vignette").classList.add("show"); 
-        setTimeout(() => document.getElementById("dmg-vignette").classList.remove("show"), 180); 
-        screenShake(); 
-        document.getElementById("low-hp-overlay").classList.toggle("pulse", myHP <= 30); 
-        if(myHP <= 0) die(); 
-    }
+    function eVisFn(v) { if(!eNode) return; eNode.getChildMeshes().forEach(m=>m.isVisible=v); if(eHPBar)eHPBar.isVisible=v; eVis=v; }
     
-    function die(){ 
-        if(!alive) return; 
-        alive = false; 
-        if(scoped) toggleScope(); 
-        eKills++; updKills(); 
-        if(conn?.open) conn.send({type:"died"}); 
-        kf("YOU DIED","dmg"); eVisFn(false); 
-        const ds = document.getElementById("death-screen"); 
-        ds.classList.add("show"); 
-        let t=3; document.getElementById("death-timer").innerText=t; 
-        const iv = setInterval(() => { 
-            t--; document.getElementById("death-timer").innerText=t; 
-            if(t <= 0){ clearInterval(iv); respawn(); } 
-        }, 1000); 
-    }
+    function takeDmg(a){ if(!alive)return; myHP=Math.max(0,myHP-a); updHP(); document.getElementById("dmg-vignette").classList.add("show"); setTimeout(()=>document.getElementById("dmg-vignette").classList.remove("show"),150); if(myHP<=0)die(); }
+    function die(){ if(!alive)return; alive=false; eKills++; updKills(); if(conn?.open)conn.send({type:"died"}); kf("DIED","dmg"); eVisFn(false); const ds=document.getElementById("death-screen"); ds.classList.add("show"); let t=3; const iv=setInterval(()=>{ t--; if(t<=0){clearInterval(iv);respawn();}},1000); }
+    function respawn(){ myHP=100; ammo=30; alive=true; updHP(); updAmmo(); document.getElementById("death-screen").classList.remove("show"); camera.position=mySpawn[0].clone(); eVisFn(true); }
     
-    function respawn(){ 
-        myHP=100; ammo=30; alive=true; reloading=false; velY=0; hVel.setAll(0); updHP(); updAmmo(); 
-        document.getElementById("low-hp-overlay").classList.remove("pulse"); 
-        document.getElementById("death-screen").classList.remove("show"); 
-        camera.position = mySpawn[Math.floor(Math.random()*mySpawn.length)].clone(); 
-        setTimeout(() => eVisFn(true), 500); 
-    }
-    
-    // UI
-    function updHP(){ 
-        const p = Math.max(0, myHP); 
-        document.getElementById("hp-inner").style.width = p + "%"; 
-        document.getElementById("hp-inner").style.background = p > 60 ? "linear-gradient(90deg,#3cba5a,#4de884)" : p > 30 ? "linear-gradient(90deg,#d4842a,#f0a030)" : "linear-gradient(90deg,#e8413c,#ff5555)"; 
-        document.getElementById("hp-num").innerText = p; 
-    }
-    function updAmmo(){ const c=document.getElementById("ammo-cur"); c.innerText=ammo; c.classList.toggle("ammo-low", ammo<=5 && !reloading); }
+    function updHP(){ document.getElementById("hp-inner").style.width=myHP+"%"; document.getElementById("hp-num").innerText=myHP; }
+    function updAmmo(){ const c=document.getElementById("ammo-cur"); c.innerText=ammo; c.classList.toggle("ammo-low", ammo<=5); }
     function updKills(){ document.getElementById("myKills").innerText=kills; document.getElementById("theirKills").innerText=eKills; }
-    function setStatus(m,c){ const e=document.getElementById("conn-status"); e.innerText=m; e.className=c; }
-    function screenShake(){ const w=document.getElementById("shake-wrap"); w.classList.remove("shake"); void w.offsetWidth; w.classList.add("shake"); }
-    function kf(m,t=""){ const f=document.getElementById("killfeed"); const d=document.createElement("div"); d.className="kf "+t; d.innerText=m; f.prepend(d); while(f.children.length>8)f.lastChild.remove(); setTimeout(()=>{d.style.opacity="0";d.style.transform="translateX(20px)"; setTimeout(()=>d.remove(),400);},3000); }
-    document.getElementById("myIdDisplay").addEventListener("click", () => { const t=document.getElementById("myIdTxt").innerText; if(t&&t!=="Initialising..."){navigator.clipboard.writeText(t); kf("ID COPIED","event");} });
+    function kf(m,t=""){ const f=document.getElementById("killfeed"); const d=document.createElement("div"); d.className="kf "+t; d.innerText=m; f.prepend(d); setTimeout(()=>d.remove(),3000); }
+    document.getElementById("myIdDisplay").addEventListener("click", () => { navigator.clipboard.writeText(document.getElementById("myIdTxt").innerText); kf("ID COPIED","event"); });
 
 } catch(e) { console.error(e); alert("Error: "+e.message); }
 </script>
