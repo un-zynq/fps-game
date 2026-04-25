@@ -49,7 +49,6 @@
         .btn.primary { background: #238636; border-color: #238636; color: white; }
         .btn.danger { background: #b62324; border-color: #b62324; color: white; }
         .btn.small { padding: 4px 8px; font-size: 11px; }
-        .btn.icon { padding: 4px 8px; font-weight: bold; }
 
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 10px; color: #8b949e; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
@@ -193,7 +192,7 @@
     const scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color3(0.02, 0.02, 0.03);
 
-    // Camera Setup with Zoom-to-Cursor Logic
+    // Camera Setup
     const camera = new BABYLON.ArcRotateCamera("cam", -Math.PI/2, Math.PI/3, 100, BABYLON.Vector3.Zero(), scene);
     camera.attachControl(canvas, true);
     camera.lowerRadiusLimit = 5;
@@ -201,14 +200,13 @@
     camera.wheelPrecision = 10; 
     camera.panningSensibility = 100;
 
-    // Custom Zoom Logic
+    // --- ZOOM TO CURSOR LOGIC (INVERTED) ---
     let isPanning = false;
-    camera._localDirection = BABYLON.Vector3.Zero();
-    camera._transformedDirection = BABYLON.Vector3.Zero();
-
-    // Override default zoom behavior
+    
+    // 1. Detach default scroll zoom
     camera.inputs.attached.mousewheel.detachControl();
     
+    // 2. Add custom event listener
     canvas.addEventListener("wheel", (event) => {
         event.preventDefault();
         
@@ -222,29 +220,38 @@
             const direction = targetPoint.subtract(camera.position).normalize();
             const distance = BABYLON.Vector3.Distance(camera.position, targetPoint);
             
-            // Determine zoom speed
-            const zoomSpeed = distance * 0.1 * (event.deltaY > 0 ? 1 : -1);
+            // INVERTED SCROLL LOGIC:
+            // event.deltaY < 0 means wheel UP on mouse -> Zoom IN (move forward)
+            // event.deltaY > 0 means wheel DOWN on mouse -> Zoom OUT (move backward)
+            // Normally deltaY > 0 moves camera forward (closer). We invert this.
             
+            const zoomDelta = event.deltaY * -0.1; // Inverted multiplier
+            
+            // Scale speed by distance so zoom feels consistent
+            const zoomSpeed = distance * (zoomDelta / 100); 
+
             // Move camera along that direction
             camera.position.addInPlace(direction.scale(zoomSpeed));
             
-            // Update radius to match new position relative to target
+            // Update radius to keep constraints
             const newDist = BABYLON.Vector3.Distance(camera.position, camera.target);
             camera.radius = Math.max(camera.lowerRadiusLimit, Math.min(camera.upperRadiusLimit, newDist));
             
-            // Slightly adjust target to keep it somewhat centered to avoid drift
-            // This simple version just moves camera, keeping target fixed, effectively dollying
         } else {
-            // Fallback default zoom if no ground hit (e.g. pointing at sky)
-            if (event.deltaY < 0) camera.radius *= 0.9;
-            else camera.radius *= 1.1;
+            // Fallback default zoom if no ground hit
+            // Also inverted
+            if (event.deltaY < 0) {
+                camera.radius *= 1.1; // Wheel Up -> Zoom Out
+            } else {
+                camera.radius *= 0.9; // Wheel Down -> Zoom In
+            }
         }
     }, { passive: false });
 
-    // Track panning state
+    // Track panning state to disable zoom-during-pan
     scene.onPointerObservable.add((pointerInfo) => {
         if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
-            if (pointerInfo.event.button === 2) { // Right click pan
+            if (pointerInfo.event.button === 2 || pointerInfo.event.button === 1) { 
                 isPanning = true;
             }
         }
@@ -283,7 +290,7 @@
     let sceneObjects = []; 
     let spawnPoints = {}; 
     let objectCounter = 0;
-    let isDirty = false; // Flag for auto-save
+    let isDirty = false; 
 
     // Materials
     const defaultMat = new BABYLON.StandardMaterial("defaultMat", scene);
@@ -340,7 +347,7 @@
                 saveToLocalStorage();
                 isDirty = false;
             }
-        }, 500); // Debounce 500ms
+        }, 500);
     }
 
     function saveToLocalStorage() {
@@ -357,7 +364,6 @@
             try {
                 const data = JSON.parse(saved);
                 applyConfig(data, false);
-                console.log("Loaded map from cache.");
             } catch(e) {
                 console.error("Failed to load cache", e);
             }
@@ -687,7 +693,6 @@
     }
 
     function applyConfig(config, resetCamera = true) {
-        // Clear existing
         sceneObjects.forEach(m => m.dispose());
         sceneObjects = [];
         
@@ -738,7 +743,7 @@
         try {
             const config = JSON.parse(jsonStr);
             applyConfig(config);
-            triggerSave(); // Save loaded map to local storage
+            triggerSave();
             alert("Map Loaded Successfully");
         } catch(e) {
             alert("Invalid JSON format: " + e.message);
