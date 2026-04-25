@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8"/>
-<title>CYBER STRIKE 3.7 PRECISION</title>
+<title>CYBER STRIKE 4.0 JSON MAP</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -95,14 +95,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 .kbd{font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 8px;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.55);min-width:36px;text-align:center;background:rgba(255,255,255,.03);}
 .kbd-desc{font-size:12px;color:rgba(255,255,255,.3);letter-spacing:.5px;}
 
-/* SCOPE CSS - Darker edges, clear center */
+/* SCOPE CSS */
 #scope{position:fixed;inset:0;pointer-events:none;z-index:95;display:none;}
 #scope-overlay{position:absolute;inset:0;background:transparent;}
 #scope-circle {
     position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     width:90vmin;height:90vmin;border-radius:50%;
     border: 2px solid rgba(255,255,255,0.2);
-    /* Darker overlay: changed from 0.25 to 0.55 opacity */
     box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
 }
 #scope-h,#scope-v{position:absolute;background:rgba(0,0,0,0.7);}
@@ -136,7 +135,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 <div id="scoreboard"><div class="sb-block you"><div class="sb-name">YOU</div><div class="sb-num" id="myKills">0</div></div><div class="sb-sep">:</div><div class="sb-block them"><div class="sb-name">ENEMY</div><div class="sb-num" id="theirKills">0</div></div></div>
 <div id="killfeed"></div>
 <div id="hud"><div id="hud-left"><div class="hud-label">Health</div><div id="hp-wrap"><div id="hp-bar"><div id="hp-inner" style="width:100%"></div></div><div id="hp-num">100</div></div></div><div id="ammo-block"><div class="hud-label">Ammo</div><div id="ammo-cur">30</div><div id="ammo-max">/ 30</div><div id="reload-track"><div id="reload-inner"></div></div></div></div>
-<div id="lobby"><div id="lp"><div class="lp-title">CYBER STRIKE</div><div class="lp-sub">P2P 1v1 TACTICAL FPS</div><span class="field-label">YOUR ID <span style="color:rgba(255,255,255,.15)">(click to copy)</span></span><div id="myIdDisplay"><span id="myIdTxt">Initialising...</span><span class="copy-tag">COPY</span></div><span class="field-label">CONNECT TO PEER</span><input id="peerInput" placeholder="Paste enemy peer ID..." /><button id="joinBtn" onclick="connect()">ENTER BATTLE</button><div id="conn-status">Waiting for connection...</div><div class="kbd-grid"><div class="kbd-row"><div class="kbd">WASD</div><div class="kbd-desc">Move</div></div><div class="kbd-row"><div class="kbd">LMB</div><div class="kbd-desc">Shoot</div></div><div class="kbd-row"><div class="kbd">SPACE</div><div class="kbd-desc">Jump</div></div><div class="kbd-row"><div class="kbd">F</div><div class="kbd-desc">Scope</div></div><div class="kbd-row"><div class="kbd">R</div><div class="kbd-desc">Reload</div></div><div class="kbd-row"><div class="kbd">SHIFT</div><div class="kbd-desc">Sprint</div></div></div></div></div>
+<div id="lobby"><div id="lp"><div class="lp-title">CYBER STRIKE</div><div class="lp-sub">JSON MAP EDITION</div><span class="field-label">YOUR ID <span style="color:rgba(255,255,255,.15)">(click to copy)</span></span><div id="myIdDisplay"><span id="myIdTxt">Initialising...</span><span class="copy-tag">COPY</span></div><span class="field-label">CONNECT TO PEER</span><input id="peerInput" placeholder="Paste enemy peer ID..." /><button id="joinBtn" onclick="connect()">ENTER BATTLE</button><div id="conn-status">Waiting for connection...</div><div class="kbd-grid"><div class="kbd-row"><div class="kbd">WASD</div><div class="kbd-desc">Move</div></div><div class="kbd-row"><div class="kbd">LMB</div><div class="kbd-desc">Shoot</div></div><div class="kbd-row"><div class="kbd">SPACE</div><div class="kbd-desc">Jump</div></div><div class="kbd-row"><div class="kbd">F</div><div class="kbd-desc">Scope</div></div><div class="kbd-row"><div class="kbd">R</div><div class="kbd-desc">Reload</div></div><div class="kbd-row"><div class="kbd">SHIFT</div><div class="kbd-desc">Sprint</div></div></div></div></div>
 
 <script>
 // AUDIO SETUP
@@ -159,6 +158,52 @@ function playReloadSound() {
     a.volume = 0.5;
     a.play().catch(e => {});
 }
+
+// MAP DATA JSON
+const MAP_DATA = {
+  "ground": { "w": 250, "h": 250, "seed": "cyberground" },
+  "walls": [
+    { "w": 250, "h": 12, "d": 2, "x": 0, "y": 6, "z": -110, "seed": "wall_north" },
+    { "w": 250, "h": 12, "d": 2, "x": 0, "y": 6, "z": 110, "seed": "wall_south" },
+    { "w": 2, "h": 12, "d": 250, "x": -110, "y": 6, "z": 0, "seed": "wall_west" },
+    { "w": 2, "h": 12, "d": 250, "x": 110, "y": 6, "z": 0, "seed": "wall_east" }
+  ],
+  "structures": [
+    // Towers
+    { "type": "box", "w": 12, "h": 16, "d": 12, "x": -65, "y": 8, "z": -65, "seed": "tower1" },
+    { "type": "box", "w": 14, "h": 0.6, "d": 14, "x": -65, "y": 16.3, "z": -65, "seed": "tower1top" },
+    { "type": "box", "w": 12, "h": 16, "d": 12, "x": 65, "y": 8, "z": -65, "seed": "tower2" },
+    { "type": "box", "w": 14, "h": 0.6, "d": 14, "x": 65, "y": 16.3, "z": -65, "seed": "tower2top" },
+    { "type": "box", "w": 12, "h": 16, "d": 12, "x": -65, "y": 8, "z": 65, "seed": "tower3" },
+    { "type": "box", "w": 14, "h": 0.6, "d": 14, "x": -65, "y": 16.3, "z": 65, "seed": "tower3top" },
+    { "type": "box", "w": 12, "h": 16, "d": 12, "x": 65, "y": 8, "z": 65, "seed": "tower4" },
+    { "type": "box", "w": 14, "h": 0.6, "d": 14, "x": 65, "y": 16.3, "z": 65, "seed": "tower4top" },
+    
+    // Center Cross
+    { "type": "box", "w": 40, "h": 2.5, "d": 6, "x": 0, "y": 1.25, "z": 0, "seed": "center_h" },
+    { "type": "box", "w": 6, "h": 2.5, "d": 40, "x": 0, "y": 1.25, "z": 0, "seed": "center_v" },
+    { "type": "box", "w": 8, "h": 6, "d": 8, "x": 0, "y": 3, "z": 0, "seed": "center_core" },
+    { "type": "box", "w": 15, "h": 3, "d": 15, "x": 0, "y": 4, "z": 0, "seed": "center_platform" },
+    
+    // Ramps (Visual approximations using thin rotated boxes)
+    { "type": "ramp", "w": 6, "d": 12, "x": 0, "y": 1.25, "z": 14, "rx": 0.22, "seed": "ramp_n" },
+    { "type": "ramp", "w": 6, "d": 12, "x": 0, "y": 1.25, "z": -14, "rx": -0.22, "seed": "ramp_s" },
+    { "type": "ramp", "w": 6, "d": 12, "x": 14, "y": 1.25, "z": 0, "rx": 0.22, "rz": 1.57, "seed": "ramp_e" },
+    { "type": "ramp", "w": 6, "d": 12, "x": -14, "y": 1.25, "z": 0, "rx": -0.22, "rz": 1.57, "seed": "ramp_w" },
+
+    // Catwalks
+    { "type": "box", "w": 30, "h": 0.5, "d": 4, "x": 0, "y": 7, "z": -50, "seed": "cat1" },
+    { "type": "box", "w": 30, "h": 0.5, "d": 4, "x": 0, "y": 7, "z": 50, "seed": "cat2" },
+    { "type": "box", "w": 4, "h": 0.5, "d": 30, "x": -50, "y": 7, "z": 0, "seed": "cat3" },
+    { "type": "box", "w": 4, "h": 0.5, "d": 30, "x": 50, "y": 7, "z": 0, "seed": "cat4" },
+    
+    // Cover Boxes
+    { "type": "box", "w": 4, "h": 2.5, "d": 4, "x": -30, "y": 1.25, "z": -25, "seed": "cover1" },
+    { "type": "box", "w": 4, "h": 2.5, "d": 4, "x": 30, "y": 1.25, "z": -25, "seed": "cover2" },
+    { "type": "box", "w": 4, "h": 2.5, "d": 4, "x": -30, "y": 1.25, "z": 25, "seed": "cover3" },
+    { "type": "box", "w": 4, "h": 2.5, "d": 4, "x": 30, "y": 1.25, "z": 25, "seed": "cover4" }
+  ]
+};
 
 try {
     const canvas = document.getElementById("c");
@@ -184,28 +229,20 @@ try {
     const amb = new BABYLON.HemisphericLight("amb", new BABYLON.Vector3(0,1,0), scene);
     amb.intensity = 0.7;
     amb.groundColor = new BABYLON.Color3(0.1,0.12,0.18);
-    amb.specular = new BABYLON.Color3(0.2,0.2,0.2);
     
     scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
     scene.fogDensity = 0.005;
     scene.fogColor = new BABYLON.Color3(0.02,0.03,0.05);
 
-    // MATERIALS
+    // MATERIAL HELPER (Always Photo Texture)
     function createMat(seed) {
-        const m = new BABYLON.StandardMaterial("m"+seed, scene);
+        const m = new BABYLON.StandardMaterial("m_" + seed, scene);
         m.diffuseTexture = new BABYLON.Texture(`https://picsum.photos/seed/${seed}/512/512`, scene);
-        m.specularColor = new BABYLON.Color3(0.15,0.15,0.15);
+        m.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         return m;
     }
-    function mat(hex, e=0){
-        const m = new BABYLON.StandardMaterial("m"+hex, scene);
-        m.diffuseColor = BABYLON.Color3.FromHexString(hex);
-        m.emissiveColor = new BABYLON.Color3(e,e,e);
-        m.specularColor = new BABYLON.Color3(0.2,0.2,0.2);
-        return m;
-    }
-
-    // GUN MATERIALS
+    
+    // GUN MATERIALS (No texture, kept clean)
     const gunMetal = new BABYLON.StandardMaterial("gunMetal", scene);
     gunMetal.diffuseColor = new BABYLON.Color3(0.08, 0.08, 0.09);
     gunMetal.specularColor = new BABYLON.Color3(0.9, 0.9, 0.9);
@@ -218,64 +255,72 @@ try {
     const gunPlastic = new BABYLON.StandardMaterial("gunPlastic", scene);
     gunPlastic.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.12);
     gunPlastic.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-    gunPlastic.specularPower = 8;
 
     const gunHighlight = new BABYLON.StandardMaterial("gunHighlight", scene);
     gunHighlight.diffuseColor = new BABYLON.Color3(0.05, 0.1, 0.12);
     gunHighlight.emissiveColor = new BABYLON.Color3(0, 0.2, 0.3);
+    
+    const metalMat = new BABYLON.StandardMaterial("metalMat", scene);
+    metalMat.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.2);
 
-    const groundMat = createMat("ground");
-    const wallMat = createMat("wall");
-    const towerMat = createMat("tower");
-    const neonCyan = mat("#001525", 0.1); neonCyan.emissiveColor = new BABYLON.Color3(0,0.5,0.7);
-    const neonRed = mat("#250008", 0.1); neonRed.emissiveColor = new BABYLON.Color3(0.6,0.08,0.1);
-    const woodMat = mat("#4a3020"); const metalMat = mat("#2a2a2a");
-
-    // MAP
+    // MAP GENERATOR FROM JSON
     const allCollidables = [];
-    const ground = BABYLON.MeshBuilder.CreateGround("gnd", {width:250,height:250}, scene);
-    ground.material = groundMat; ground.checkCollisions = true; ground.isWall = true; allCollidables.push(ground);
+    
+    // Ground
+    const gMat = createMat(MAP_DATA.ground.seed);
+    const ground = BABYLON.MeshBuilder.CreateGround("gnd", {width: MAP_DATA.ground.w, height: MAP_DATA.ground.h}, scene);
+    ground.material = gMat; 
+    ground.checkCollisions = true; 
+    ground.isWall = true; 
+    allCollidables.push(ground);
 
+    // Grid Overlay
     const gridM = BABYLON.MeshBuilder.CreateGround("grd", {width:250,height:250,subdivisions:60}, scene);
-    const gMat = new BABYLON.StandardMaterial("gMat", scene); gMat.wireframe = true;
-    gMat.emissiveColor = new BABYLON.Color3(0,0.04,0.08); gMat.alpha = 0.2;
-    gridM.material = gMat; gridM.position.y = 0.02;
+    const gridMat = new BABYLON.StandardMaterial("gMat", scene); 
+    gridMat.wireframe = true;
+    gridMat.emissiveColor = new BABYLON.Color3(0,0.04,0.08); 
+    gridMat.alpha = 0.2;
+    gridM.material = gridMat; gridM.position.y = 0.02;
 
-    function box(w,h,d, x,y,z, m, collidable=true){
-        const b = BABYLON.MeshBuilder.CreateBox("b", {width:w,height:h,depth:d}, scene);
-        b.position.set(x,y+h/2,z); b.material = m;
-        if(collidable) { b.checkCollisions = true; b.isWall = true; allCollidables.push(b); }
-        return b;
+    // Helper to create JSON objects
+    function createMapObject(data) {
+        let mesh;
+        const mat = createMat(data.seed);
+        
+        if (data.type === "ramp") {
+            // Ramps are flat boxes rotated
+            mesh = BABYLON.MeshBuilder.CreateBox("obj", {width: data.w, height: 0.2, depth: data.d}, scene);
+            mesh.rotation.x = data.rx || 0;
+            mesh.rotation.z = data.rz || 0;
+        } else {
+            // Default box
+            mesh = BABYLON.MeshBuilder.CreateBox("obj", {width: data.w, height: data.h, depth: data.d}, scene);
+        }
+        
+        mesh.position.set(data.x, data.y, data.z);
+        mesh.material = mat;
+        
+        if (data.collidable !== false) {
+            mesh.checkCollisions = true;
+            mesh.isWall = true;
+            allCollidables.push(mesh);
+        }
+        return mesh;
     }
 
-    const WS = 110;
-    box(250,12,2, 0,0,-WS, wallMat); box(250,12,2, 0,0,WS, wallMat);
-    box(2,12,250, -WS,0,0, wallMat); box(2,12,250, WS,0,0, wallMat);
-
-    const towerPositions = [[-65, -65], [65, -65], [-65, 65], [65, 65]];
-    towerPositions.forEach(([tx, tz]) => {
-        box(12,16,12, tx,0,tz, towerMat);
-        box(14,0.6,14, tx,16,tz, towerMat);
-        box(14,1.2,0.3, tx,17.3,tz-7, metalMat); box(14,1.2,0.3, tx,17.3,tz+7, metalMat);
-        box(0.3,1.2,14, tx-7,17.3,tz, metalMat); box(0.3,1.2,14, tx+7,17.3,tz, metalMat);
+    // Create Walls
+    MAP_DATA.walls.forEach(w => {
+        const mat = createMat(w.seed);
+        const mesh = BABYLON.MeshBuilder.CreateBox("wall", {width: w.w, height: w.h, depth: w.d}, scene);
+        mesh.position.set(w.x, w.y, w.z);
+        mesh.material = mat;
+        mesh.checkCollisions = true;
+        mesh.isWall = true;
+        allCollidables.push(mesh);
     });
 
-    const centreMat = mat("#0c1015");
-    box(40,2.5,6, 0,0,0, centreMat); box(6,2.5,40, 0,0,0, centreMat); box(8,6,8, 0,0,0, centreMat);
-    box(15,3,15, 0,2.5,0, centreMat);
-    
-    const createRamp = (x,z,rot) => {
-        const ramp = BABYLON.MeshBuilder.CreateBox("r", {width:6, height:0.2, depth:12}, scene);
-        ramp.position.set(x,1.25,z); ramp.rotation.x = rot * 0.22;
-        ramp.material = centreMat;
-        ramp.checkCollisions = true; ramp.isWall = true; allCollidables.push(ramp);
-    };
-    createRamp(0,14,1); createRamp(0,-14,-1); createRamp(14,0,1); createRamp(-14,0,-1);
-
-    box(30,0.5,4, 0,7,-50, centreMat); box(30,0.5,4, 0,7,50, centreMat);
-    box(4,0.5,30, -50,7,0, centreMat); box(4,0.5,30, 50,7,0, centreMat);
-    
-    towerPositions.forEach(([tx, tz]) => box(14,0.1,14, tx,16.6,tz, neonRed, false));
+    // Create Structures
+    MAP_DATA.structures.forEach(s => createMapObject(s));
 
     // PARTICLES
     const smokeTex = new BABYLON.DynamicTexture("st", 64, scene);
@@ -292,12 +337,16 @@ try {
     }
     const v3 = () => new BABYLON.Vector3();
     
+    // BULLET POOL
     const bulletPool = new Pool(() => { 
-        const m = BABYLON.MeshBuilder.CreateSphere("b",{diameter:0.08,segments:4},scene); 
+        const m = BABYLON.MeshBuilder.CreateSphere("b",{diameter:0.1,segments:6},scene); 
         m.material = new BABYLON.StandardMaterial("bm",scene); 
-        m.material.emissiveColor=new BABYLON.Color3(1,0.85,0.4); m.material.disableLighting=true; 
-        m.velocity=v3(); m.startPos=v3(); return m; 
-    }, 50);
+        m.material.emissiveColor=new BABYLON.Color3(1,0.85,0.4); 
+        m.material.disableLighting=true; 
+        m.isPickable = false; 
+        m.velocity=v3(); 
+        return m; 
+    }, 60);
 
     const sparkPool = new Pool(() => { 
         const m = BABYLON.MeshBuilder.CreateSphere("s",{diameter:0.03,segments:3},scene); 
@@ -339,16 +388,13 @@ try {
             m.material = mat || gunMetal; return m;
         };
 
-        // 1. Main Receiver
         add("rec", {x:0.09, y:0.16, z:0.55}, new BABYLON.Vector3(0,0.05,0.05), null, gunMetal);
         add("slide", {x:0.085, y:0.08, z:0.4}, new BABYLON.Vector3(0,0.14,0.08), null, gunMetalDark);
         for(let i=0; i<5; i++) add("ser", {x:0.09, y:0.01, z:0.015}, new BABYLON.Vector3(0,0.11,-0.05 + i*0.025), null, gunMetal);
         
-        // 2. Barrel
         addCyl("barrelOuter", {h:0.4, d:0.1}, new BABYLON.Vector3(0,0.1,0.35), new BABYLON.Vector3(Math.PI/2,0,0), gunMetalDark);
         addCyl("barrelInner", {h:0.42, d:0.05}, new BABYLON.Vector3(0,0.1,0.35), new BABYLON.Vector3(Math.PI/2,0,0), gunMetal);
         
-        // 3. Grip Handle
         add("gripMain", {x:0.07, y:0.18, z:0.09}, new BABYLON.Vector3(0,-0.06,-0.08), new BABYLON.Vector3(0.25,0,0), gunPlastic);
         for(let i=0; i<4; i++) add("gt", {x:0.072, y:0.015, z:0.08}, new BABYLON.Vector3(0,-0.02-i*0.04,-0.08 + i*0.015), new BABYLON.Vector3(0.25,0,0), gunPlastic);
         
@@ -356,13 +402,11 @@ try {
         add("guardFront", {x:0.04, y:0.06, z:0.02}, new BABYLON.Vector3(0,-0.05,0.08), null, gunMetal);
         add("mag", {x:0.06, y:0.16, z:0.08}, new BABYLON.Vector3(0,-0.1,-0.06), new BABYLON.Vector3(-0.15,0,0), gunMetal);
         
-        // 4. Sights
         add("fs", {x:0.01, y:0.04, z:0.02}, new BABYLON.Vector3(0,0.2,0.25), null, gunMetalDark);
         add("rs", {x:0.06, y:0.03, z:0.02}, new BABYLON.Vector3(0,0.16,-0.1), null, gunMetalDark);
         add("rsL", {x:0.01, y:0.04, z:0.015}, new BABYLON.Vector3(-0.025,0.175,-0.1), null, gunMetalDark);
         add("rsR", {x:0.01, y:0.04, z:0.015}, new BABYLON.Vector3(0.025,0.175,-0.1), null, gunMetalDark);
         
-        // 5. Accents
         add("acc1", {x:0.015, y:0.015, z:0.2}, new BABYLON.Vector3(0.045,0.05,0.05), null, gunHighlight);
         add("acc2", {x:0.015, y:0.015, z:0.2}, new BABYLON.Vector3(-0.045,0.05,0.05), null, gunHighlight);
 
@@ -399,7 +443,7 @@ try {
     const hVel = new BABYLON.Vector3();
     const _v = new BABYLON.Vector3(), _r = new BABYLON.Vector3(), _u = BABYLON.Vector3.Up();
 
-    // ENEMY - PIXEL PERFECT (MESH BASED)
+    // ENEMY
     let eNode = null, eMuzzle = null, eBodyParts = [], eHPBar = null, eHPF = null, eHP = 100, eVis = true, eTP = new BABYLON.Vector3(), eTR = 0;
     
     function buildEnemy() {
@@ -407,7 +451,9 @@ try {
         eNode = new BABYLON.TransformNode("er", scene);
         eBodyParts = []; 
 
-        const eM = mat("#681818", 0.08); eM.emissiveColor = new BABYLON.Color3(0.1,0.02,0.02);
+        const eM = new BABYLON.StandardMaterial("eM", scene);
+        eM.diffuseColor = new BABYLON.Color3(0.4, 0.1, 0.1);
+        eM.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         
         const addV = (n, s, p, type) => { 
             const m = BABYLON.MeshBuilder.CreateBox(n, s, scene); 
@@ -418,31 +464,24 @@ try {
             return m;
         };
 
-        // LEGS
         addV("l1", {width:0.25,height:0.65,depth:0.25}, new BABYLON.Vector3(-0.15,0.32,0), "legs");
         addV("l2", {width:0.25,height:0.65,depth:0.25}, new BABYLON.Vector3(0.15,0.32,0), "legs");
-        
-        // TORSO
         addV("t", {width:0.6,height:0.8,depth:0.35}, new BABYLON.Vector3(0,1.12,0), "body");
-        
-        // ARMS
         addV("a1", {width:0.2,height:0.6,depth:0.2}, new BABYLON.Vector3(-0.48,1.1,0), "body");
         addV("a2", {width:0.2,height:0.6,depth:0.2}, new BABYLON.Vector3(0.48,1.1,0), "body");
         
-        // HEAD (Sphere for precise headshots)
         const hd = BABYLON.MeshBuilder.CreateSphere("hd", {diameter:0.5, segments:12}, scene);
         hd.parent = eNode; hd.position.y = 1.82; hd.material = eM;
         hd.isPickable = true; hd.hitType = "head";
         eBodyParts.push(hd);
 
-        // Eyes
-        const eye = mat("#000000", 1); eye.emissiveColor = new BABYLON.Color3(1,0.1,0.05);
+        const eye = new BABYLON.StandardMaterial("eye", scene);
+        eye.emissiveColor = new BABYLON.Color3(1,0.1,0.05);
         const e1 = BABYLON.MeshBuilder.CreateSphere("e1", {diameter:0.08,segments:4}, scene);
         e1.parent = eNode; e1.position.set(-0.1,1.84,0.24); e1.material = eye;
         const e2 = BABYLON.MeshBuilder.CreateSphere("e2", {diameter:0.08,segments:4}, scene);
         e2.parent = eNode; e2.position.set(0.1,1.84,0.24); e2.material = eye;
         
-        // Gun
         const gn = new BABYLON.TransformNode("eg", scene); gn.parent = eNode; gn.position = new BABYLON.Vector3(0.5,1.1,0.25);
         const gb = BABYLON.MeshBuilder.CreateBox("egb", {width:0.06,height:0.06,depth:0.5}, scene);
         gb.parent = gn; gb.position.z = 0.08; gb.material = metalMat;
@@ -492,7 +531,14 @@ try {
         for(let i=0;i<2;i++){ const s=smokePool.get(); s.position=gunMuzzle.getAbsolutePosition().clone(); s.scaling.setAll(0.5); s.life=0.35; s.material.alpha=0.4; s.velocity.set((Math.random()-0.5)*0.8,1.0,(Math.random()-0.5)*0.8); }
         
         const f=camera.getForwardRay().direction; const o=camera.position.clone();
-        const b=bulletPool.get(); b.isEnemy=false; b.startPos=o.clone(); b.position=o.add(f.scale(0.8)); b.velocity=f.scale(BS); b.life=2.0; b.hasHit=false; b.distanceTraveled=0;
+        const b=bulletPool.get(); 
+        b.isEnemy=false; 
+        b.position=o.add(f.scale(0.8)); 
+        b.velocity=f.scale(BS); 
+        b.life=0.5; // Fixed 0.5s life
+        b.hasHit=false; 
+        b.material.alpha = 1.0; // Reset alpha
+        
         if(conn?.open) conn.send({type:"shoot", pos:{x:o.x,y:o.y,z:o.z}, dir:{x:f.x,y:f.y,z:f.z}});
     }
 
@@ -526,61 +572,66 @@ try {
         const dt = Math.min(engine.getDeltaTime()/1000, 0.05); fi++;
         animateGun();
         
-        // Bullet Physics
+        // Bullet Logic
         bulletPool.loop(b => {
-            if(!b||!b.position||b.hasHit) return true; // Already hit? Remove.
-            
-            const p = b.position.clone(); 
-            const mv = b.velocity.scale(dt); 
-            b.position.addInPlace(mv); 
-            b.life -= dt; 
-            b.distanceTraveled += mv.length();
-            
-            if(b.life <= 0 || b.distanceTraveled > 260) return true; // Lifetime/Range expired? Remove.
+            if(!b || !b.position) return true;
 
-            const d=mv.length(); const dir=mv.normalize();
-            
-            // Wall Check
-            const wR = new BABYLON.Ray(p, dir, d + 0.05);
-            const wH = scene.pickWithRay(wR, m=>m.isWall && !m.hitType); 
-            if(wH.hit && wH.distance <= d + 0.05){ 
-                sparks(wH.pickedPoint, wH.getNormal(), false); 
-                b.hasHit = true; 
-                return true; // Hit wall? Remove bullet.
-            }
+            // Fade out logic
+            b.life -= dt;
+            b.material.alpha = Math.max(0, b.life * 2.0); // Fade from 1 to 0 over 0.5s
 
-            // Enemy Check (Pixel Perfect Mesh)
-            if(!b.isEnemy && eNode && eVis && eBodyParts.length > 0){
-                const hR = new BABYLON.Ray(p, dir, d);
-                const pI = hR.intersectsMeshes(eBodyParts, false);
+            if (b.life <= 0) return true; // Remove after fade
+
+            // Physics
+            if(!b.hasHit) {
+                const p = b.position.clone(); 
+                const mv = b.velocity.scale(dt); 
+                b.position.addInPlace(mv); 
+                const d = mv.length(); 
+                const dir = mv.normalize();
                 
-                if(pI.length > 0 && pI[0].distance <= d){ 
-                    const hitMesh = pI[0].pickedMesh;
-                    const t = hitMesh.hitType; 
-                    let dm = DMG[t] || DMG.body; 
-                    if(scoped) dm = Math.floor(dm * DMG.scoped);
+                // Wall Collision
+                const wR = new BABYLON.Ray(p, dir, d + 0.05);
+                const wH = scene.pickWithRay(wR, m=>m.isWall && !m.hitType); 
+                if(wH.hit && wH.distance <= d + 0.05){ 
+                    sparks(wH.pickedPoint, wH.getNormal(), false); 
+                    b.hasHit = true; 
+                    b.velocity.scaleInPlace(0); // Stop movement, let fade continue
+                }
+
+                // Enemy Collision
+                if(!b.isEnemy && eNode && eVis && eBodyParts.length > 0){
+                    const hR = new BABYLON.Ray(p, dir, d);
+                    const pI = hR.intersectsMeshes(eBodyParts, false);
                     
-                    hitReg(pI[0].pickedPoint, t); 
-                    blood(pI[0].pickedPoint);
-                    
-                    if(conn?.open) conn.send({type:"hit", amount:dm, headshot:t==="head", legshot:t==="legs"});
-                    
-                    b.hasHit = true;
-                    return true; // Hit player? Remove bullet immediately.
+                    if(pI.length > 0 && pI[0].distance <= d){ 
+                        const hitMesh = pI[0].pickedMesh;
+                        const t = hitMesh.hitType; 
+                        let dm = DMG[t] || DMG.body; 
+                        if(scoped) dm = Math.floor(dm * DMG.scoped);
+                        
+                        hitReg(pI[0].pickedPoint, t); 
+                        blood(pI[0].pickedPoint);
+                        
+                        if(conn?.open) conn.send({type:"hit", amount:dm, headshot:t==="head", legshot:t==="legs"});
+                        
+                        b.hasHit = true;
+                        b.velocity.scaleInPlace(0); // Stop movement
+                    }
                 }
             }
             
-            // Self Check
-            if(b.isEnemy && alive){
+            // Self Collision
+            if(b.isEnemy && alive && !b.hasHit){
                 const dist = BABYLON.Vector3.Distance(b.position, camera.position);
                 if(dist < 0.5){ 
                     const rY=b.position.y-camera.position.y+CAM_HEIGHT; let t="body"; if(rY>1.6)t="head"; else if(rY<0.9)t="legs";
                     takeDmg(DMG[t]); blood(b.position); 
                     b.hasHit = true;
-                    return true; // Hit self? Remove bullet.
+                    b.velocity.scaleInPlace(0);
                 }
             }
-            return false; // Keep bullet alive
+            return false;
         });
 
         smokePool.loop(s => {
@@ -636,7 +687,7 @@ try {
         }, 500); });
         conn.on('data', d => {
             if(d.type==="pos"){ if(!eNode) return; eTP.set(d.x,d.y,d.z); eTR=d.ry; if(eHPF&&d.hp!=null){ eHP=d.hp; eHPF.width=Math.max(0,d.hp)+"%"; } if(!eVis)eVisFn(true); }
-            else if(d.type==="shoot"){ if(eMuzzle){ const mp=eMuzzle.getAbsolutePosition(); const b=bulletPool.get(); b.isEnemy=true; b.position=mp.clone(); b.velocity=new BABYLON.Vector3(d.dir.x,d.dir.y,d.dir.z).normalize().scale(BS*0.92); b.life=2.0; b.hasHit=false; b.distanceTraveled=0; } }
+            else if(d.type==="shoot"){ if(eMuzzle){ const mp=eMuzzle.getAbsolutePosition(); const b=bulletPool.get(); b.isEnemy=true; b.position=mp.clone(); b.velocity=new BABYLON.Vector3(d.dir.x,d.dir.y,d.dir.z).normalize().scale(BS*0.92); b.life=0.5; b.hasHit=false; b.material.alpha=1.0; } }
             else if(d.type==="hit"){ takeDmg(d.amount); if(d.headshot)kf("HEADSHOT ON YOU!","headshot"); else if(d.legshot)kf("LEG SHOT ON YOU!","legshot"); }
             else if(d.type==="died"){ kills++; updKills(); kf("ENEMY ELIMINATED","kill"); const hm=document.getElementById("hitmarker"); hm.classList.remove("show","kill"); void hm.offsetWidth; hm.classList.add("show","kill"); screenShake(); eVisFn(false); setTimeout(()=>eVisFn(true),3500); }
         });
