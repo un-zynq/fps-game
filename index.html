@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8"/>
-<title>CYBER STRIKE 5.0 CROSS NETWORK</title>
+<title>CYBER STRIKE 6.0 // REALISM MOD</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -18,7 +18,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 #xhair::after{width:10px;height:2px;top:11px;left:7px;}
 #xhair.hit::before,#xhair.hit::after{background:#ff3333;box-shadow:0 0 12px #ff3333;}
 #xhair.headshot::before,#xhair.headshot::after{background:#ffcc00;box-shadow:0 0 15px #ffcc00; transform: scale(1.4);}
-#xhair.legshot::before,#xhair.legshot::after{background:#44aaff;box-shadow:0 0 12px #44aaff;}
 
 #hud{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-end;padding:0 32px 24px;pointer-events:none;z-index:100;}
 .hud-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:4px;color:rgba(255,255,255,.4);text-transform:uppercase;}
@@ -39,7 +38,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 @keyframes kfIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
 .kf.dmg{border-color:#ff4444;color:#ffaaaa;}
 .kf.headshot{border-color:#ffcc00;color:#ffeeaa;}
-.kf.legshot{border-color:#44aaff;color:#aaddff;}
 .kf.event{border-color:rgba(100,200,255,.5);color:rgba(150,220,255,.9);}
 .kf.kill{border-color:#44ff88;color:#aaffcc;}
 
@@ -61,7 +59,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 #hitmarker svg{width:32px;height:32px;stroke:#fff;stroke-width:2;}
 #hitmarker.show{animation:hmPop .25s ease-out;}
 #hitmarker.headshot svg{stroke:#ffcc00; width: 40px; height: 40px;}
-#hitmarker.legshot svg{stroke:#44aaff; width: 36px; height: 36px;}
 @keyframes hmPop{0%{opacity:1;transform:translate(-50%,-50%) scale(.5)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
 #hitmarker.kill svg{stroke:#ff4444;}
 
@@ -124,31 +121,51 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 <div id="scoreboard"><div class="sb-block you"><div class="sb-name">YOU</div><div class="sb-num" id="myKills">0</div></div><div class="sb-sep">:</div><div class="sb-block them"><div class="sb-name">ENEMY</div><div class="sb-num" id="theirKills">0</div></div></div>
 <div id="killfeed"></div>
 <div id="hud"><div id="hud-left"><div class="hud-label">Health</div><div id="hp-wrap"><div id="hp-bar"><div id="hp-inner" style="width:100%"></div></div><div id="hp-num">100</div></div></div><div id="ammo-block"><div class="hud-label">Ammo</div><div id="ammo-cur">30</div><div id="ammo-max">/ 30</div><div id="reload-track"><div id="reload-inner"></div></div></div></div>
-<div id="lobby"><div id="lp"><div class="lp-title">CYBER STRIKE</div><div class="lp-sub">GLOBAL NETWORK</div><span class="field-label">YOUR ID <span style="color:rgba(255,255,255,.15)">(share this)</span></span><div id="myIdDisplay"><span id="myIdTxt">Initialising...</span><span class="copy-tag">COPY</span></div><span class="field-label">CONNECT TO PEER</span><input id="peerInput" placeholder="Paste enemy peer ID..." /><button id="joinBtn" onclick="connect()">ENTER BATTLE</button><div id="conn-status">Waiting for signal...</div><div class="kbd-grid"><div class="kbd-row"><div class="kbd">WASD</div><div class="kbd-desc">Move</div></div><div class="kbd-row"><div class="kbd">LMB</div><div class="kbd-desc">Shoot</div></div><div class="kbd-row"><div class="kbd">SPACE</div><div class="kbd-desc">Jump</div></div><div class="kbd-row"><div class="kbd">F</div><div class="kbd-desc">Scope</div></div><div class="kbd-row"><div class="kbd">R</div><div class="kbd-desc">Reload</div></div><div class="kbd-row"><div class="kbd">SHIFT</div><div class="kbd-desc">Sprint</div></div></div></div></div>
+<div id="lobby"><div id="lp"><div class="lp-title">CYBER STRIKE</div><div class="lp-sub">REALISM ENGINE</div><span class="field-label">YOUR ID <span style="color:rgba(255,255,255,.15)">(share this)</span></span><div id="myIdDisplay"><span id="myIdTxt">Initialising...</span><span class="copy-tag">COPY</span></div><span class="field-label">CONNECT TO PEER</span><input id="peerInput" placeholder="Paste enemy peer ID..." /><button id="joinBtn" onclick="connect()">ENTER BATTLE</button><div id="conn-status">Waiting for signal...</div><div class="kbd-grid"><div class="kbd-row"><div class="kbd">WASD</div><div class="kbd-desc">Move</div></div><div class="kbd-row"><div class="kbd">LMB</div><div class="kbd-desc">Shoot</div></div><div class="kbd-row"><div class="kbd">SPACE</div><div class="kbd-desc">Jump</div></div><div class="kbd-row"><div class="kbd">F</div><div class="kbd-desc">Scope</div></div><div class="kbd-row"><div class="kbd">R</div><div class="kbd-desc">Reload</div></div><div class="kbd-row"><div class="kbd">SHIFT</div><div class="kbd-desc">Sprint</div></div></div></div></div>
 
 <script>
+// CONFIG JSON - PAS DIT AAN VOOR JE MAP
+const GAME_CONFIG = {
+    "spawns": {
+        "player1": { "initial": {x: 0, y: 20, z: 60}, "respawn": {x: 0, y: 20, z: 55} },
+        "player2": { "initial": {x: 0, y: 20, z: -60}, "respawn": {x: 0, y: 20, z: -55} }
+    },
+    "map_objects": [
+        // Voorbeeld platform
+        { 
+            "type": "box", 
+            "position": {x: 0, y: -5, z: 0}, 
+            "size": {w: 20, h: 2, d: 20}, 
+            "texture": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", 
+            "collision": true 
+        },
+        // Pillars
+        { 
+            "type": "box", 
+            "position": {x: 10, y: 5, z: 10}, 
+            "size": {w: 2, h: 20, d: 2}, 
+            "texture": "https://images.unsplash.com/photo-1533158326339-7f3cf2401f67?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", 
+            "collision": true 
+        },
+        { 
+            "type": "box", 
+            "position": {x: -10, y: 5, z: -10}, 
+            "size": {w: 2, h: 20, d: 2}, 
+            "texture": "https://images.unsplash.com/photo-1533158326339-7f3cf2401f67?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", 
+            "collision": true 
+        }
+    ]
+};
+
 // DOM Caching
 const DOM = {
-    myIdTxt: document.getElementById("myIdTxt"),
-    peerInput: document.getElementById("peerInput"),
-    connStatus: document.getElementById("conn-status"),
-    lobby: document.getElementById("lobby"),
-    hpInner: document.getElementById("hp-inner"),
-    hpNum: document.getElementById("hp-num"),
-    ammoCur: document.getElementById("ammo-cur"),
-    myKills: document.getElementById("myKills"),
-    theirKills: document.getElementById("theirKills"),
-    xhair: document.getElementById("xhair"),
-    hitmarker: document.getElementById("hitmarker"),
-    dmgVignette: document.getElementById("dmg-vignette"),
-    lowHpOverlay: document.getElementById("low-hp-overlay"),
-    deathScreen: document.getElementById("death-screen"),
-    deathTimer: document.getElementById("death-timer"),
-    scope: document.getElementById("scope"),
-    reloadTrack: document.getElementById("reload-track"),
-    reloadInner: document.getElementById("reload-inner"),
-    killfeed: document.getElementById("killfeed"),
-    shakeWrap: document.getElementById("shake-wrap")
+    myIdTxt: document.getElementById("myIdTxt"), peerInput: document.getElementById("peerInput"), connStatus: document.getElementById("conn-status"),
+    lobby: document.getElementById("lobby"), hpInner: document.getElementById("hp-inner"), hpNum: document.getElementById("hp-num"),
+    ammoCur: document.getElementById("ammo-cur"), myKills: document.getElementById("myKills"), theirKills: document.getElementById("theirKills"),
+    xhair: document.getElementById("xhair"), hitmarker: document.getElementById("hitmarker"), dmgVignette: document.getElementById("dmg-vignette"),
+    lowHpOverlay: document.getElementById("low-hp-overlay"), deathScreen: document.getElementById("death-screen"), deathTimer: document.getElementById("death-timer"),
+    scope: document.getElementById("scope"), reloadTrack: document.getElementById("reload-track"), reloadInner: document.getElementById("reload-inner"),
+    killfeed: document.getElementById("killfeed"), shakeWrap: document.getElementById("shake-wrap")
 };
 
 // AUDIO
@@ -159,20 +176,6 @@ let audioIndex = 0;
 function playLocalGunshot() { const a = audioPool[audioIndex]; a.currentTime = 0; a.volume = 0.5; a.play().catch(e => {}); audioIndex = (audioIndex + 1) % audioPool.length; }
 function playReloadSound() { const a = new Audio(reloadURL); a.volume = 0.5; a.play().catch(e => {}); }
 
-// MAP DATA
-const MAP_DATA = {
-  "ground": { "w": 500, "h": 500, "seed": "cyberground" },
-  "walls": [
-    { "w": 20, "h": 5, "d": 2, "x": 30, "y": 2.5, "z": 0, "seed": "wall1" },
-    { "w": 2, "h": 5, "d": 20, "x": 40, "y": 2.5, "z": 10, "seed": "wall2" }
-  ],
-  "structures": [
-    { "w": 5, "h": 5, "d": 5, "x": 0, "y": 2.5, "z": 0, "seed": "box_1", "rx": 0, "rz": -0.524 },
-    { "w": 4, "h": 3, "d": 4, "x": 10, "y": 1.5, "z": 10, "seed": "box_2" },
-    { "w": 4, "h": 3, "d": 4, "x": -10, "y": 1.5, "z": -10, "seed": "box_3" }
-  ]
-};
-
 try {
     const canvas = document.getElementById("c");
     const engine = new BABYLON.Engine(canvas, true, {antialias:true, stencil:true});
@@ -182,9 +185,8 @@ try {
 
     // CAMERA
     const CAM_HEIGHT = 1.7;
-    const camera = new BABYLON.UniversalCamera("cam", new BABYLON.Vector3(0, CAM_HEIGHT, 0), scene);
-    camera.minZ = 0.05; camera.maxZ = 2000;
-    camera.inertia = 0; camera.angularSensibility = 500;
+    const camera = new BABYLON.UniversalCamera("cam", new BABYLON.Vector3(0, 20, 0), scene);
+    camera.minZ = 0.05; camera.maxZ = 2000; camera.inertia = 0; camera.angularSensibility = 500;
     camera.checkCollisions = true;
     camera.ellipsoid = new BABYLON.Vector3(0.4, CAM_HEIGHT * 0.5, 0.4);
     camera.keysUp = camera.keysDown = camera.keysLeft = camera.keysRight = [];
@@ -192,93 +194,41 @@ try {
     camera.attachControl(canvas, true);
 
     function playEnemyGunshot(enemyPos) {
-        if(!enemyPos) return;
-        const playerPos = camera.position;
-        const distance = BABYLON.Vector3.Distance(playerPos, enemyPos);
-        if(distance > 150) return;
-        let volume = Math.max(0, 1 - (distance / 150));
-        volume = Math.pow(volume, 0.8);
-        if(volume > 0.01) {
-            const a = audioPool[audioIndex];
-            a.currentTime = 0; a.volume = volume * 0.7;
-            a.play().catch(e => {});
-            audioIndex = (audioIndex + 1) % audioPool.length;
-        }
+        if(!enemyPos) return; const playerPos = camera.position; const distance = BABYLON.Vector3.Distance(playerPos, enemyPos);
+        if(distance > 150) return; let volume = Math.max(0, 1 - (distance / 150)); volume = Math.pow(volume, 0.8);
+        if(volume > 0.01) { const a = audioPool[audioIndex]; a.currentTime = 0; a.volume = volume * 0.7; a.play().catch(e => {}); audioIndex = (audioIndex + 1) % audioPool.length; }
     }
 
     // LIGHT
-    const dirLight = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-0.5,-1,-0.3), scene);
-    dirLight.intensity = 1.2;
-    const amb = new BABYLON.HemisphericLight("amb", new BABYLON.Vector3(0,1,0), scene);
-    amb.intensity = 0.7;
-    amb.groundColor = new BABYLON.Color3(0.1,0.12,0.18);
-    
-    scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
-    scene.fogDensity = 0.004;
-    scene.fogColor = new BABYLON.Color3(0.02,0.03,0.05);
+    const dirLight = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-0.5,-1,-0.3), scene); dirLight.intensity = 1.2;
+    const amb = new BABYLON.HemisphericLight("amb", new BABYLON.Vector3(0,1,0), scene); amb.intensity = 0.7;
+    scene.fogMode = BABYLON.Scene.FOGMODE_EXP2; scene.fogDensity = 0.004; scene.fogColor = new BABYLON.Color3(0.02,0.03,0.05);
 
-    function createMat(seed) {
-        const m = new BABYLON.StandardMaterial("m_" + seed, scene);
-        m.diffuseTexture = new BABYLON.Texture(`https://picsum.photos/seed/${seed}/512/512`, scene);
+    // MATERIAL HELPER
+    function createMat(url) {
+        const m = new BABYLON.StandardMaterial("m_" + url.substring(0, 5), scene);
+        if(url && url !== "") { m.diffuseTexture = new BABYLON.Texture(url, scene); } 
+        else { m.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5); }
         m.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         return m;
     }
 
-    // GUN MATERIALS
-    const gunMetal = new BABYLON.StandardMaterial("gunMetal", scene);
-    gunMetal.diffuseColor = new BABYLON.Color3(0.08, 0.08, 0.09);
-    gunMetal.specularColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-    gunMetal.specularPower = 64;
-
-    const gunMetalDark = new BABYLON.StandardMaterial("gunMetalDark", scene);
-    gunMetalDark.diffuseColor = new BABYLON.Color3(0.03, 0.03, 0.04);
-    gunMetalDark.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
-    
-    const gunPlastic = new BABYLON.StandardMaterial("gunPlastic", scene);
-    gunPlastic.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.12);
-    gunPlastic.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-
-    const gunHighlight = new BABYLON.StandardMaterial("gunHighlight", scene);
-    gunHighlight.diffuseColor = new BABYLON.Color3(0.05, 0.1, 0.12);
-    gunHighlight.emissiveColor = new BABYLON.Color3(0, 0.2, 0.3);
-
-    // Enemy Materials
-    const enemyMat = new BABYLON.StandardMaterial("eM", scene);
-    enemyMat.diffuseColor = new BABYLON.Color3(0.4, 0.1, 0.1);
-    enemyMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-
-    const enemyGunMetal = new BABYLON.StandardMaterial("enemyGunMetal", scene);
-    enemyGunMetal.diffuseColor = new BABYLON.Color3(0.15, 0.05, 0.05);
-    enemyGunMetal.specularColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-
-    const enemyGunHighlight = new BABYLON.StandardMaterial("enemyGunHighlight", scene);
-    enemyGunHighlight.diffuseColor = new BABYLON.Color3(0.12, 0.05, 0.05);
-    enemyGunHighlight.emissiveColor = new BABYLON.Color3(0.3, 0.1, 0);
-
-    // MAP GENERATOR
+    // MAP GENERATOR FROM JSON
     const allCollidables = [];
-    const gMat = createMat(MAP_DATA.ground.seed);
-    const ground = BABYLON.MeshBuilder.CreateGround("gnd", {width: MAP_DATA.ground.w, height: MAP_DATA.ground.h}, scene);
-    ground.material = gMat; ground.checkCollisions = true; ground.isWall = true; allCollidables.push(ground);
-
-    const gridM = BABYLON.MeshBuilder.CreateGround("grd", {width:250,height:250,subdivisions:60}, scene);
-    const gridMat = new BABYLON.StandardMaterial("gMat", scene); gridMat.wireframe = true; gridMat.emissiveColor = new BABYLON.Color3(0,0.04,0.08); gridMat.alpha = 0.2;
-    gridM.material = gridMat; gridM.position.y = 0.02;
-
-    MAP_DATA.walls.forEach(w => {
-        const mat = createMat(w.seed);
-        const mesh = BABYLON.MeshBuilder.CreateBox("wall", {width: w.w, height: w.h, depth: w.d}, scene);
-        mesh.position.set(w.x, w.y, w.z); mesh.material = mat;
-        if(w.rx) mesh.rotation.x = w.rx; if(w.ry) mesh.rotation.y = w.ry; if(w.rz) mesh.rotation.z = w.rz;
-        mesh.checkCollisions = true; mesh.isWall = true; allCollidables.push(mesh);
-    });
-
-    MAP_DATA.structures.forEach(s => {
-        const mat = createMat(s.seed);
-        const mesh = BABYLON.MeshBuilder.CreateBox("obj", {width: s.w, height: s.h, depth: s.d}, scene);
-        mesh.position.set(s.x, s.y, s.z); mesh.material = mat;
-        if(s.rx) mesh.rotation.x = s.rx; if(s.ry) mesh.rotation.y = s.ry; if(s.rz) mesh.rotation.z = s.rz;
-        mesh.checkCollisions = true; mesh.isWall = true; allCollidables.push(mesh);
+    GAME_CONFIG.map_objects.forEach((obj, i) => {
+        let mesh;
+        if(obj.type === "box") {
+            mesh = BABYLON.MeshBuilder.CreateBox("obj_"+i, {width: obj.size.w, height: obj.size.h, depth: obj.size.d}, scene);
+        } else if(obj.type === "cylinder") {
+            mesh = BABYLON.MeshBuilder.CreateCylinder("obj_"+i, {height: obj.size.h, diameter: obj.size.d}, scene);
+        } else {
+            return; // Skip unknown types
+        }
+        mesh.position = new BABYLON.Vector3(obj.position.x, obj.position.y, obj.position.z);
+        mesh.material = createMat(obj.texture);
+        if(obj.collision) {
+            mesh.checkCollisions = true; mesh.isWall = true; allCollidables.push(mesh);
+        }
     });
 
     // PARTICLE SYSTEM
@@ -343,6 +293,10 @@ try {
     function buildWeapon() {
         gunRoot = new BABYLON.TransformNode("gr", scene); gunRoot.parent = camera; gunRoot.position = new BABYLON.Vector3(0.3, -0.32, 0.6);
         gunGrip = new BABYLON.TransformNode("gg", scene); gunGrip.parent = gunRoot;
+        const gunMetal = new BABYLON.StandardMaterial("gunMetal", scene); gunMetal.diffuseColor = new BABYLON.Color3(0.08, 0.08, 0.09); gunMetal.specularColor = new BABYLON.Color3(0.9, 0.9, 0.9);
+        const gunMetalDark = new BABYLON.StandardMaterial("gunMetalDark", scene); gunMetalDark.diffuseColor = new BABYLON.Color3(0.03, 0.03, 0.04);
+        const gunPlastic = new BABYLON.StandardMaterial("gunPlastic", scene); gunPlastic.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.12);
+        const gunHighlight = new BABYLON.StandardMaterial("gunHighlight", scene); gunHighlight.emissiveColor = new BABYLON.Color3(0, 0.2, 0.3);
         createGunParts(gunGrip, gunMetal, gunMetalDark, gunPlastic, gunHighlight, 1);
         gunMuzzle = new BABYLON.TransformNode("gm", scene); gunMuzzle.parent = gunGrip; gunMuzzle.position = new BABYLON.Vector3(0, 0.1, 0.55);
     }
@@ -352,10 +306,8 @@ try {
 
     // STATE
     let myHP=100, kills=0, eKills=0, alive=true, ammo=30, reloading=false, scoped=false;
-    let invulnerable = false; // Nieuw: Onkwetsbaarheid
-    const SPAWN_A = [new BABYLON.Vector3(0,CAM_HEIGHT,60), new BABYLON.Vector3(25,CAM_HEIGHT,65)];
-    const SPAWN_B = [new BABYLON.Vector3(0,CAM_HEIGHT,-60), new BABYLON.Vector3(25,CAM_HEIGHT,-65)];
-    let mySpawn = SPAWN_A;
+    let invulnerable = false; 
+    let isHost = false;
     const DMG = {head: 40, body: 18, legs: 12, scoped: 1.6};
 
     // PHYSICS
@@ -364,55 +316,158 @@ try {
     const hVel = new BABYLON.Vector3();
     const _v = new BABYLON.Vector3(), _r = new BABYLON.Vector3(), _u = BABYLON.Vector3.Up();
 
-    // ENEMY STATE
-    let eNode = null, eMuzzle = null, eGunGrip = null, eHead = null, eGunPivot = null;
+    // ENEMY STATE & REALISTIC MODEL
+    let eRoot = null, eMuzzle = null, eHead = null, eGunPivot = null, eSpine = null;
     let eBodyParts = [], eHPBar = null, eHPF = null, eHP = 100, eVis = true;
     let eTP = new BABYLON.Vector3(), eRY = 0, eRX = 0;
-    let eAlive = true; // Status van de vijand
-    
-    function buildEnemy() {
-        if(eNode) { eNode.getChildMeshes().forEach(m=>m.dispose()); eNode.dispose(); }
-        eNode = new BABYLON.TransformNode("er", scene);
+    let eAlive = true;
+    let eAnimState = { walkCycle: 0, speed: 0, lastPos: new BABYLON.Vector3() };
+    let eSkeleton = { lLeg: null, rLeg: null, lArm: null, rArm: null, lKnee: null, rKnee: null, lElbow: null, rElbow: null };
+
+    function buildRealisticEnemy() {
+        if(eRoot) { eRoot.getChildMeshes().forEach(m=>m.dispose()); eRoot.dispose(); }
+        eRoot = new BABYLON.TransformNode("er", scene);
         eBodyParts = []; 
 
-        const addV = (n, s, p, type) => { 
-            const m = BABYLON.MeshBuilder.CreateBox(n, s, scene); 
-            m.parent = eNode; m.position = p; m.material = enemyMat; 
-            m.isPickable = true; m.hitType = type; 
-            eBodyParts.push(m); return m;
+        // Materials
+        const skin = new BABYLON.StandardMaterial("skin", scene);
+        skin.diffuseColor = new BABYLON.Color3(0.85, 0.68, 0.55); skin.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+        
+        const cloth = new BABYLON.StandardMaterial("cloth", scene);
+        cloth.diffuseColor = new BABYLON.Color3(0.15, 0.15, 0.18); cloth.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+        
+        const bootMat = new BABYLON.StandardMaterial("boot", scene);
+        bootMat.diffuseColor = new BABYLON.Color3(0.05, 0.05, 0.05);
+
+        const enemyGunMetal = new BABYLON.StandardMaterial("enemyGunMetal", scene);
+        enemyGunMetal.diffuseColor = new BABYLON.Color3(0.15, 0.05, 0.05);
+        enemyGunMetal.specularColor = new BABYLON.Color3(0.9, 0.9, 0.9);
+
+        const hitMat = new BABYLON.StandardMaterial("hit", scene);
+        hitMat.emissiveColor = new BABYLON.Color3(1,1,1);
+
+        // Helper to create limbs
+        const addLimb = (name, size, pos, parent, mat, type) => {
+            const m = BABYLON.MeshBuilder.CreateCapsule(name, {radius: size.r, height: size.h, tessellation: 12, subdivisions: 4}, scene);
+            m.parent = parent; m.position = pos; m.material = mat;
+            m.isPickable = true; m.hitType = type || "body";
+            eBodyParts.push(m);
+            return m;
         };
 
-        addV("l1", {width:0.25,height:0.65,depth:0.25}, new BABYLON.Vector3(-0.15,0.32,0), "legs");
-        addV("l2", {width:0.25,height:0.65,depth:0.25}, new BABYLON.Vector3(0.15,0.32,0), "legs");
-        addV("t", {width:0.6,height:0.8,depth:0.35}, new BABYLON.Vector3(0,1.12,0), "body");
-        addV("a1", {width:0.2,height:0.6,depth:0.2}, new BABYLON.Vector3(-0.48,1.1,0), "body");
-        addV("a2", {width:0.2,height:0.6,depth:0.2}, new BABYLON.Vector3(0.48,1.1,0), "body");
-        
-        eHead = BABYLON.MeshBuilder.CreateSphere("hd", {diameter:0.5, segments:12}, scene);
-        eHead.parent = eNode; eHead.position.y = 1.82; eHead.material = enemyMat;
-        eHead.isPickable = true; eHead.hitType = "head";
-        eBodyParts.push(eHead);
+        // --- TORSO ---
+        eSpine = new BABYLON.TransformNode("spine", scene); eSpine.parent = eRoot; eSpine.position.y = 1.1;
+        const torso = addLimb("torso", {r: 0.18, h: 0.7}, new BABYLON.Vector3(0,0,0), eSpine, cloth, "body");
 
-        const eye = new BABYLON.StandardMaterial("eye", scene); eye.emissiveColor = new BABYLON.Color3(1,0.1,0.05);
-        const e1 = BABYLON.MeshBuilder.CreateSphere("e1", {diameter:0.08,segments:4}, scene); e1.parent = eHead; e1.position.set(-0.1,0,0.24); e1.material = eye;
-        const e2 = BABYLON.MeshBuilder.CreateSphere("e2", {diameter:0.08,segments:4}, scene); e2.parent = eHead; e2.position.set(0.1,0,0.24); e2.material = eye;
+        // --- HEAD ---
+        eHead = BABYLON.MeshBuilder.CreateSphere("hd", {diameter:0.45, segments:16}, scene);
+        eHead.parent = eSpine; eHead.position.y = 0.5; eHead.material = skin;
+        eHead.isPickable = true; eHead.hitType = "head"; eBodyParts.push(eHead);
         
-        eGunPivot = new BABYLON.TransformNode("eGunPivot", scene); eGunPivot.parent = eNode; eGunPivot.position = new BABYLON.Vector3(0, 1.05, 0);
-        const gunParent = new BABYLON.TransformNode("eg", scene); gunParent.parent = eGunPivot; gunParent.position = new BABYLON.Vector3(0.45, 0, 0.35);
-        eGunGrip = new BABYLON.TransformNode("egg", scene); eGunGrip.parent = gunParent;
-        createGunParts(eGunGrip, enemyGunMetal, enemyGunMetal, enemyGunMetal, enemyGunHighlight, 0.7);
+        // Neck
+        const neck = BABYLON.MeshBuilder.CreateCylinder("neck", {height: 0.1, diameter: 0.15}, scene);
+        neck.parent = eSpine; neck.position.y = 0.3; neck.material = skin;
+
+        // Eyes
+        const eye = new BABYLON.StandardMaterial("eye", scene); eye.emissiveColor = new BABYLON.Color3(1,0.1,0.05);
+        const e1 = BABYLON.MeshBuilder.CreateSphere("e1", {diameter:0.06,segments:8}, scene); e1.parent = eHead; e1.position.set(-0.09,0.05,0.21); e1.material = eye;
+        const e2 = BABYLON.MeshBuilder.CreateSphere("e2", {diameter:0.06,segments:8}, scene); e2.parent = eHead; e2.position.set(0.09,0.05,0.21); e2.material = eye;
+
+        // --- LEGS ---
+        // Left Leg
+        eSkeleton.lLeg = new BABYLON.TransformNode("lLegJoint", scene); eSkeleton.lLeg.parent = eRoot; eSkeleton.lLeg.position.set(-0.12, 0.75, 0);
+        const lThigh = addLimb("lThigh", {r: 0.09, h: 0.45}, new BABYLON.Vector3(0, -0.2, 0), eSkeleton.lLeg, cloth, "legs");
+        eSkeleton.lKnee = new BABYLON.TransformNode("lKneeJoint", scene); eSkeleton.lKnee.parent = eSkeleton.lLeg; eSkeleton.lKnee.position.y = -0.45;
+        const lCalf = addLimb("lCalf", {r: 0.08, h: 0.45}, new BABYLON.Vector3(0, -0.2, 0), eSkeleton.lKnee, cloth, "legs");
+        const lFoot = BABYLON.MeshBuilder.CreateBox("lFoot", {width: 0.12, height: 0.1, depth: 0.25}, scene);
+        lFoot.parent = eSkeleton.lKnee; lFoot.position.set(0, -0.5, 0.05); lFoot.material = bootMat; lFoot.hitType = "legs"; lFoot.isPickable = true; eBodyParts.push(lFoot);
+
+        // Right Leg
+        eSkeleton.rLeg = new BABYLON.TransformNode("rLegJoint", scene); eSkeleton.rLeg.parent = eRoot; eSkeleton.rLeg.position.set(0.12, 0.75, 0);
+        const rThigh = addLimb("rThigh", {r: 0.09, h: 0.45}, new BABYLON.Vector3(0, -0.2, 0), eSkeleton.rLeg, cloth, "legs");
+        eSkeleton.rKnee = new BABYLON.TransformNode("rKneeJoint", scene); eSkeleton.rKnee.parent = eSkeleton.rLeg; eSkeleton.rKnee.position.y = -0.45;
+        const rCalf = addLimb("rCalf", {r: 0.08, h: 0.45}, new BABYLON.Vector3(0, -0.2, 0), eSkeleton.rKnee, cloth, "legs");
+        const rFoot = BABYLON.MeshBuilder.CreateBox("rFoot", {width: 0.12, height: 0.1, depth: 0.25}, scene);
+        rFoot.parent = eSkeleton.rKnee; rFoot.position.set(0, -0.5, 0.05); rFoot.material = bootMat; rFoot.hitType = "legs"; rFoot.isPickable = true; eBodyParts.push(rFoot);
+
+        // --- ARMS ---
+        // Left Arm
+        eSkeleton.lArm = new BABYLON.TransformNode("lArmJoint", scene); eSkeleton.lArm.parent = eSpine; eSkeleton.lArm.position.set(-0.28, 0.2, 0);
+        const lUpperArm = addLimb("lUArm", {r: 0.06, h: 0.3}, new BABYLON.Vector3(0, -0.12, 0), eSkeleton.lArm, skin, "body");
+        eSkeleton.lElbow = new BABYLON.TransformNode("lElbowJoint", scene); eSkeleton.lElbow.parent = eSkeleton.lArm; eSkeleton.lElbow.position.y = -0.28;
+        const lLowerArm = addLimb("lLArm", {r: 0.05, h: 0.3}, new BABYLON.Vector3(0, -0.12, 0), eSkeleton.lElbow, skin, "body");
+
+        // Right Arm (Gun Arm)
+        eSkeleton.rArm = new BABYLON.TransformNode("rArmJoint", scene); eSkeleton.rArm.parent = eSpine; eSkeleton.rArm.position.set(0.28, 0.2, 0);
+        const rUpperArm = addLimb("rUArm", {r: 0.06, h: 0.3}, new BABYLON.Vector3(0, -0.12, 0), eSkeleton.rArm, skin, "body");
+        eSkeleton.rElbow = new BABYLON.TransformNode("rElbowJoint", scene); eSkeleton.rElbow.parent = eSkeleton.rArm; eSkeleton.rElbow.position.y = -0.28;
+        const rLowerArm = addLimb("rLArm", {r: 0.05, h: 0.3}, new BABYLON.Vector3(0, -0.12, 0), eSkeleton.rElbow, skin, "body");
+
+        // --- WEAPON ---
+        eGunPivot = new BABYLON.TransformNode("eGunPivot", scene); eGunPivot.parent = eSkeleton.rElbow; eGunPivot.position = new BABYLON.Vector3(0, -0.2, 0.1);
+        eGunPivot.rotation.x = Math.PI; // Adjust aim orientation
+        const eGunGrip = new BABYLON.TransformNode("egg", scene); eGunGrip.parent = eGunPivot;
+        const gunHighlight = new BABYLON.StandardMaterial("gh", scene); gunHighlight.emissiveColor = new BABYLON.Color3(0.3, 0.1, 0);
+        createGunParts(eGunGrip, enemyGunMetal, enemyGunMetal, enemyGunMetal, gunHighlight, 0.7);
         eMuzzle = new BABYLON.TransformNode("em", scene); eMuzzle.parent = eGunGrip; eMuzzle.position = new BABYLON.Vector3(0, 0.07, 0.38);
         
-        eNode.position.set(0,0,0); eTP.copyFrom(eNode.position); eVis = true; eAlive = true;
-        eNode.flashHit = () => { enemyMat.emissiveColor = new BABYLON.Color3(1,1,1); setTimeout(()=>enemyMat.emissiveColor=new BABYLON.Color3(0.1,0.02,0.02), 50); };
+        eRoot.position.set(0,0,0); eTP.copyFrom(eRoot.position); eVis = true; eAlive = true;
+        eRoot.flashHit = () => { eBodyParts.forEach(m => m.material = hitMat); setTimeout(() => {
+            // Reset materials roughly (simple reset)
+            eBodyParts.forEach(m => { /* Resetting individual materials is complex, just reset emissive */ 
+                if(m.material) m.material.emissiveColor = new BABYLON.Color3(0,0,0); // Clear emissive
+                // Ideally store original mat, but for brevity:
+                m.material = skin; // This isn't perfect but works for flash
+            });
+            torso.material = cloth; lThigh.material = cloth; rThigh.material = cloth; lCalf.material = cloth; rCalf.material = cloth; lFoot.material = bootMat; rFoot.material = bootMat; 
+            lUpperArm.material = skin; lLowerArm.material = skin; rUpperArm.material = skin; rLowerArm.material = skin; eHead.material = skin;
+        }, 50); };
+    }
+
+    function animateEnemy(dt) {
+        if(!eRoot || !eAlive) return;
+
+        // Calculate speed for animation
+        const dist = BABYLON.Vector3.Distance(eRoot.position, eAnimState.lastPos);
+        eAnimState.speed = dist / dt;
+        eAnimState.lastPos.copyFrom(eRoot.position);
+
+        // Walk Cycle
+        if(eAnimState.speed > 0.1) {
+            eAnimState.walkCycle += dt * 12; // Animation speed
+            const angle = Math.sin(eAnimState.walkCycle) * 0.8; // Swing angle
+            
+            // Leg swing
+            if(eSkeleton.lLeg) eSkeleton.lLeg.rotation.x = angle;
+            if(eSkeleton.rLeg) eSkeleton.rLeg.rotation.x = -angle;
+            
+            // Knee bend (simple approx)
+            if(eSkeleton.lKnee) eSkeleton.lKnee.rotation.x = Math.max(0, angle) * 0.5;
+            if(eSkeleton.rKnee) eSkeleton.rKnee.rotation.x = Math.max(0, -angle) * 0.5;
+
+            // Arm swing (opposite to legs)
+            if(eSkeleton.lArm) eSkeleton.lArm.rotation.x = -angle * 0.5;
+            if(eSkeleton.rArm) eSkeleton.rArm.rotation.x = angle * 0.5; // Gun arm swings less usually
+            
+            // Slight body bob
+            if(eSpine) eSpine.position.y = 1.1 + Math.abs(Math.sin(eAnimState.walkCycle * 2)) * 0.02;
+        } else {
+            // Idle pose
+            eAnimState.walkCycle = 0;
+            // Smoothly return to zero
+            if(eSkeleton.lLeg) eSkeleton.lLeg.rotation.x *= 0.9;
+            if(eSkeleton.rLeg) eSkeleton.rLeg.rotation.x *= 0.9;
+            if(eSkeleton.lKnee) eSkeleton.lKnee.rotation.x *= 0.9;
+            if(eSkeleton.rKnee) eSkeleton.rKnee.rotation.x *= 0.9;
+            if(eSkeleton.lArm) eSkeleton.lArm.rotation.x *= 0.9;
+            if(eSkeleton.rArm) eSkeleton.rArm.rotation.x *= 0.9;
+        }
     }
 
     function eVisFn(v) { 
-        if(!eNode) return; 
-        eNode.getChildMeshes().forEach(m => {
-            m.isVisible = v; 
-            m.isPickable = v; // Belangrijk: Maak onzichtbaar EN niet-klikbaar
-        });
+        if(!eRoot) return; 
+        eRoot.getChildMeshes().forEach(m => { m.isVisible = v; m.isPickable = v; });
+        // Traverse skeleton nodes too? Meshes are attached, should be enough.
         if(eHPBar) eHPBar.isVisible = v; 
         eVis = v; 
     }
@@ -428,7 +483,7 @@ try {
     }
 
     // INPUT
-    const K={}; let mL=false, host=false;
+    const K={}; let mL=false;
 
     window.addEventListener("keydown", e => { 
         K[e.code]=true; 
@@ -443,12 +498,9 @@ try {
     window.addEventListener("mousedown", e => { if(e.button===0) shoot(); });
 
     function toggleScope() {
-        if(!alive) return;
-        scoped = !scoped;
-        DOM.scope.style.display = scoped ? "block" : "none";
-        camera.fov = scoped ? 0.35 : 0.85;
-        DOM.xhair.style.display = scoped ? "none" : "block";
-        if(gunRoot) gunRoot.isVisible = !scoped;
+        if(!alive) return; scoped = !scoped;
+        DOM.scope.style.display = scoped ? "block" : "none"; camera.fov = scoped ? 0.35 : 0.85;
+        DOM.xhair.style.display = scoped ? "none" : "block"; if(gunRoot) gunRoot.isVisible = !scoped;
     }
 
     function spawnMuzzleFlash(pos, dir) {
@@ -463,32 +515,18 @@ try {
         if(!alive||!mL||reloading||ammo<=0) return;
         ammo--; updAmmo(); recoil(); playLocalGunshot();
         
-        const f = camera.getForwardRay(1000);
-        const o = camera.position;
-        
+        const f = camera.getForwardRay(1000); const o = camera.position;
         if(gunMuzzle) spawnMuzzleFlash(gunMuzzle.getAbsolutePosition(), f.direction);
-        
-        // CHECK: isPickable zorgt ervoor dat we door dode spelers (die isPickable=false hebben) heen schieten
         const hit = scene.pickWithRay(f, m => m.isPickable && ((m.isWall && !m.hitType) || m.hitType));
-        
-        let hitPoint = f.origin.add(f.direction.scale(1000));
-        let hitNormal = BABYLON.Vector3.Up();
+        let hitPoint = f.origin.add(f.direction.scale(1000)); let hitNormal = BABYLON.Vector3.Up();
 
         if(hit.hit && hit.pickedMesh) {
-            hitPoint = hit.pickedPoint;
-            hitNormal = hit.getNormal() || BABYLON.Vector3.Up();
-            
+            hitPoint = hit.pickedPoint; hitNormal = hit.getNormal() || BABYLON.Vector3.Up();
             if(hit.pickedMesh.hitType) {
-                const t = hit.pickedMesh.hitType; 
-                let dm = DMG[t] || DMG.body; 
-                if(scoped) dm = Math.floor(dm * DMG.scoped);
-                
-                hitReg(hitPoint, t); 
-                blood(hitPoint);
+                const t = hit.pickedMesh.hitType; let dm = DMG[t] || DMG.body; if(scoped) dm = Math.floor(dm * DMG.scoped);
+                hitReg(hitPoint, t); blood(hitPoint);
                 if(conn?.open) conn.send({type:"hit", amount:dm, headshot:t==="head", legshot:t==="legs"});
-            } else {
-                sparks(hitPoint, hitNormal, false);
-            }
+            } else { sparks(hitPoint, hitNormal, false); }
         }
 
         const b = bulletPool.get(); b.isEnemy = false; b.position.copyFrom(gunMuzzle.getAbsolutePosition()); b.material.alpha = 1.0; b.material.emissiveColor.set(1, 0.85, 0.4);
@@ -499,10 +537,9 @@ try {
     }
 
     function enemyShootVisual(dirVec) {
-        if(!eMuzzle || !eNode) return;
-        playEnemyGunshot(eNode.position);
+        if(!eMuzzle || !eRoot) return; playEnemyGunshot(eRoot.position);
         spawnMuzzleFlash(eMuzzle.getAbsolutePosition(), dirVec);
-        const ray = new BABYLON.Ray(eNode.position, dirVec, 1000); const hit = scene.pickWithRay(ray, m => m.isWall && !m.hitType);
+        const ray = new BABYLON.Ray(eRoot.position, dirVec, 1000); const hit = scene.pickWithRay(ray, m => m.isWall && !m.hitType);
         let hitPoint = ray.origin.add(dirVec.scale(1000)); if(hit.hit) hitPoint = hit.pickedPoint;
         const b = bulletPool.get(); b.isEnemy = true; b.position.copyFrom(eMuzzle.getAbsolutePosition()); b.material.alpha = 1.0; b.material.emissiveColor.set(1, 0.5, 0.3);
         const dist = BABYLON.Vector3.Distance(b.position, hitPoint); const time = 0.2; const speed = dist / time;
@@ -513,16 +550,16 @@ try {
     function blood(pos) { for(let i=0;i<5;i++){ const p = sparkPool.get(); p.position.copyFrom(pos); p.velocity.set((Math.random()-0.5)*0.2, Math.random()*0.1+0.03, (Math.random()-0.5)*0.2); p.life = 25; p.material.emissiveColor = new BABYLON.Color3(0.9,0.1,0.1); } }
     
     function hitReg(pt, type) {
-        DOM.xhair.classList.remove("hit","headshot","legshot"); DOM.xhair.classList.add(type==="head"?"headshot":(type==="legs"?"legshot":"hit")); setTimeout(() => DOM.xhair.classList.remove("hit","headshot","legshot"), 180);
-        DOM.hitmarker.classList.remove("show","kill","headshot","legshot"); void DOM.hitmarker.offsetWidth; DOM.hitmarker.classList.add("show"); if(type==="head") DOM.hitmarker.classList.add("headshot"); else if(type==="legs") DOM.hitmarker.classList.add("legshot");
-        kf(type==="head"?"HEADSHOT!":(type==="legs"?"LEG SHOT":"HIT"), type==="head"?"headshot":(type==="legs"?"legshot":"dmg"));
-        if(eNode?.flashHit) eNode.flashHit();
+        DOM.xhair.classList.remove("hit","headshot","legshot"); DOM.xhair.classList.add(type==="head"?"headshot":"hit"); setTimeout(() => DOM.xhair.classList.remove("hit","headshot","legshot"), 180);
+        DOM.hitmarker.classList.remove("show","kill","headshot","legshot"); void DOM.hitmarker.offsetWidth; DOM.hitmarker.classList.add("show"); if(type==="head") DOM.hitmarker.classList.add("headshot");
+        kf(type==="head"?"HEADSHOT!":"HIT", type==="head"?"headshot":"dmg");
+        if(eRoot?.flashHit) eRoot.flashHit();
     }
     
     function reload() { if(reloading||ammo===30) return; reloading=true; playReloadSound(); kf("RELOADING...","event"); DOM.reloadTrack.style.display="block"; DOM.reloadInner.style.transition="none"; DOM.reloadInner.style.width="0%"; requestAnimationFrame(() => { DOM.reloadInner.style.transition="width 1.4s linear"; DOM.reloadInner.style.width="100%"; }); setTimeout(() => { ammo=30; reloading=false; DOM.reloadTrack.style.display="none"; DOM.reloadInner.style.width="0%"; updAmmo(); kf("RELOADED","event"); }, 1400); }
 
     // LOOP
-    let fi=0, lGY=0;
+    let fi=0;
     scene.onBeforeRenderObservable.add(() => {
         const dt = Math.min(engine.getDeltaTime()/1000, 0.05);
         fi++;
@@ -541,36 +578,37 @@ try {
         if(_v.length()>0) _v.normalize().scaleInPlace(spd);
         BABYLON.Vector3.LerpToRef(hVel, _v, 0.14, hVel);
 
-        const gR = new BABYLON.Ray(camera.position, BABYLON.Vector3.Down(), CAM_HEIGHT+0.4);
+        // Physics
+        const gR = new BABYLON.Ray(camera.position, BABYLON.Vector3.Down(), CAM_HEIGHT+0.5);
         const gH = scene.pickWithRay(gR, m=>m.checkCollisions);
-        grounded = gH.hit && gH.distance <= CAM_HEIGHT+0.15;
-        if(grounded && gH.hit) lGY = gH.pickedPoint.y;
+        
+        if(gH.hit && gH.distance <= CAM_HEIGHT + 0.1) {
+            grounded = true; velY = 0;
+            const targetY = gH.pickedPoint.y + CAM_HEIGHT;
+            if(camera.position.y < targetY) camera.position.y = targetY;
+        } else { grounded = false; }
+
         if(K["Space"] && grounded){ velY=jumpSpd; grounded=false; }
-        if(!grounded) velY+=grav*dt; else if(velY<0) velY=0;
+        if(!grounded) velY+=grav*dt;
         
         const fM = hVel.clone(); fM.y=velY*dt;
         camera.cameraDirection.copyFrom(fM);
         
-        const mY = (grounded?lGY:0)+CAM_HEIGHT;
-        if(camera.position.y < mY){ camera.position.y=mY; if(velY<0)velY=0; grounded=true; }
-
-        // Interpoleer vijand
-        if(eNode && eVis){ 
-            BABYLON.Vector3.LerpToRef(eNode.position, eTP, 0.2, eNode.position);
-            let currentRY = eNode.rotation.y; let diff = eRY - currentRY; while (diff < -Math.PI) diff += Math.PI * 2; while (diff > Math.PI) diff -= Math.PI * 2; eNode.rotation.y += diff * 0.15;
-            if(eGunPivot) eGunPivot.rotation.x = eRX; if(eHead) eHead.rotation.x = eRX;
-            if(eHPBar){ eHPBar.position.copyFrom(eNode.position); eHPBar.position.y += 2.6; } 
+        // Enemy Interpolation & Animation
+        if(eRoot && eVis && eAlive){ 
+            BABYLON.Vector3.LerpToRef(eRoot.position, eTP, 0.2, eRoot.position);
+            let currentRY = eRoot.rotation.y; let diff = eRY - currentRY; while (diff < -Math.PI) diff += Math.PI * 2; while (diff > Math.PI) diff -= Math.PI * 2; eRoot.rotation.y += diff * 0.15;
+            if(eGunPivot) eGunPivot.rotation.x = eRX; if(eHead) eHead.rotation.x = eRX; // Aim vertical
+            
+            if(eHPBar){ eHPBar.position.copyFrom(eRoot.position); eHPBar.position.y += 2.2; }
+            
+            animateEnemy(dt);
         }
         
-        // VERZEND DATA: Alleen als je leeft
         if(conn?.open && fi%2===0 && alive) conn.send({
             type:"pos", 
-            x:camera.position.x, 
-            y:camera.position.y-CAM_HEIGHT, 
-            z:camera.position.z, 
-            ry:camera.rotation.y, 
-            rx:camera.rotation.x, 
-            hp:myHP
+            x:camera.position.x, y:camera.position.y-CAM_HEIGHT, z:camera.position.z, 
+            ry:camera.rotation.y, rx:camera.rotation.x, hp:myHP
         });
     });
 
@@ -583,18 +621,26 @@ try {
     
     peer.on('open', id => { DOM.myIdTxt.innerText = id; DOM.connStatus.innerText = "Ready - ID Copied?"; });
     peer.on('error', e => { console.error(e); setStatus("Connection Error", "err"); });
-    peer.on('connection', c => { conn = c; host = true; setup(); });
+    peer.on('connection', c => { conn = c; isHost = true; setup(); });
     
-    window.connect = () => { const id = DOM.peerInput.value.trim(); if(!id) return; setStatus("Connecting...", ""); conn = peer.connect(id, { reliable: false }); host = false; setup(); };
+    window.connect = () => { const id = DOM.peerInput.value.trim(); if(!id) return; setStatus("Connecting...", ""); conn = peer.connect(id, { reliable: false }); isHost = false; setup(); };
     
+    function getSpawnPoint(initial = true) {
+        const cfg = GAME_CONFIG.spawns;
+        const playerKey = isHost ? "player1" : "player2";
+        const point = initial ? cfg[playerKey].initial : cfg[playerKey].respawn;
+        return new BABYLON.Vector3(point.x, point.y, point.z);
+    }
+
     function setup() {
         conn.on('open', () => { 
             setStatus("CONNECTED", "ok"); 
             setTimeout(() => {
                 DOM.lobby.style.display="none"; 
-                buildWeapon(); buildEnemy(); buildEHP();
-                mySpawn = host ? SPAWN_A : SPAWN_B; 
-                camera.position = mySpawn[Math.floor(Math.random()*mySpawn.length)].clone();
+                buildWeapon(); buildRealisticEnemy(); buildEHP();
+                
+                camera.position = getSpawnPoint(true);
+                
                 velY=0; myHP=100; ammo=30; alive=true; invulnerable = false; hVel.setAll(0); updHP(); updAmmo();
                 kf("PLAYER JOINED", "event");
             }, 500); 
@@ -602,37 +648,24 @@ try {
         
         conn.on('data', d => {
             if(d.type==="pos"){ 
-                if(!eNode) return; 
-                
-                // Logic: Als we positie ontvangen met HP>0, maar we dachten dat hij dood was -> Respawning
-                if(d.hp > 0 && !eAlive) {
-                    eAlive = true;
-                    eVisFn(true);
-                }
-
-                // Als de vijand dood is, negeer alle positie updates (voorkomt ghost movement)
+                if(!eRoot) return; 
+                if(d.hp > 0 && !eAlive) { eAlive = true; eVisFn(true); }
                 if(!eAlive) return;
-
-                // Verwerk data
-                eTP.set(d.x, d.y, d.z); 
-                eRY = d.ry; 
-                if(d.rx != null) eRX = d.rx;
+                eTP.set(d.x, d.y, d.z); eRY = d.ry; if(d.rx != null) eRX = d.rx;
                 if(eHPF && d.hp!=null){ eHP = d.hp; eHPF.width = Math.max(0, d.hp)+"%"; }
                 if(!eVis) eVisFn(true); 
             }
             else if(d.type==="shoot"){ enemyShootVisual(new BABYLON.Vector3(d.dir.x, d.dir.y, d.dir.z)); }
             else if(d.type==="hit"){ 
-                // FIX: Negeer schade als ik al dood ben OF onkwetsbaar ben
                 if(!alive || invulnerable) return; 
                 takeDmg(d.amount); 
-                if(d.headshot) kf("HEADSHOT ON YOU!","headshot"); else if(d.legshot) kf("LEG SHOT ON YOU!","legshot"); 
+                if(d.headshot) kf("HEADSHOT ON YOU!","headshot");
             }
             else if(d.type==="died"){ 
                 kills++; updKills(); kf("ENEMY ELIMINATED","kill"); 
                 DOM.hitmarker.classList.remove("show","kill"); void DOM.hitmarker.offsetWidth; DOM.hitmarker.classList.add("show","kill"); 
                 screenShake(); 
-                eAlive = false; // Zet status naar dood
-                eVisFn(false); // Verberg mesh EN zet isPickable uit
+                eAlive = false; eVisFn(false); 
             }
         });
         
@@ -641,20 +674,16 @@ try {
 
     // LOGIC
     function takeDmg(a){ 
-        if(!alive || invulnerable) return; // Extra check
-        myHP = Math.max(0, myHP - a); 
-        updHP(); 
-        DOM.dmgVignette.classList.add("show"); 
-        setTimeout(() => DOM.dmgVignette.classList.remove("show"), 180); 
-        screenShake(); 
-        DOM.lowHpOverlay.classList.toggle("pulse", myHP <= 30); 
+        if(!alive || invulnerable) return; 
+        myHP = Math.max(0, myHP - a); updHP(); 
+        DOM.dmgVignette.classList.add("show"); setTimeout(() => DOM.dmgVignette.classList.remove("show"), 180); 
+        screenShake(); DOM.lowHpOverlay.classList.toggle("pulse", myHP <= 30); 
         if(myHP <= 0) die(); 
     }
     
     function die(){ 
         if(!alive) return; 
-        alive = false;
-        invulnerable = true; // Zet onkwetsbaar aan tijdens dood zijn
+        alive = false; invulnerable = true;
         if(scoped) toggleScope(); 
         eKills++; updKills(); 
         if(conn?.open) conn.send({type:"died"}); 
@@ -668,10 +697,10 @@ try {
     function respawn(){ 
         myHP=100; ammo=30; alive=true; reloading=false; velY=0; hVel.setAll(0); updHP(); updAmmo(); 
         DOM.lowHpOverlay.classList.remove("pulse"); DOM.deathScreen.classList.remove("show"); 
-        camera.position = mySpawn[Math.floor(Math.random()*mySpawn.length)].clone(); 
-        // Nieuw: 0.1s onkwetsbaarheid na spawn
-        invulnerable = true;
-        setTimeout(() => { invulnerable = false; }, 100);
+        
+        camera.position = getSpawnPoint(false); // Use Respawn Coords
+        
+        invulnerable = true; setTimeout(() => { invulnerable = false; }, 100);
     }
     
     // UI Helpers
