@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>CYBER STRIKE - Level Architect Pro</title>
+    <style>
+        :root { 
+            --neon: #00ffcc; --bg: #05080c; --panel: #0d1117; 
+            --border: #30363d; --text: #c9d1d9; --accent: #58a6ff; 
+            --danger: #f85149;
+        }
+        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text); }
+        
+        /* Layout */
+        #app { display: flex; height: 100%; }
+        
+        /* Left Panel: Hierarchy */
+        #hierarchy-panel { width: 220px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        #hierarchy-header { padding: 15px; border-bottom: 1px solid var(--border); font-weight: bold; color: var(--neon); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        #object-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .obj-item { padding: 8px 12px; margin-bottom: 4px; background: #161b22; border-radius: 4px; cursor: pointer; border: 1px solid transparent; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .obj-item:hover { border-color: var(--border); }
+        .obj-item.selected { background: #0d2b33; border-color: var(--neon); color: var(--neon); }
+
+        /* Center: Viewport */
+        #viewport-container { flex: 1; position: relative; display: flex; flex-direction: column; }
+        #toolbar { height: 50px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; gap: 10px; }
+        #renderCanvas { width: 100%; flex: 1; display: block; outline: none; }
+
+        /* Right Panel: Inspector */
+        #inspector-panel { width: 320px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        #inspector-content { padding: 20px; overflow-y: auto; }
+        
+        /* Bottom: JSON Output */
+        #json-output-container { height: 200px; border-top: 1px solid var(--border); background: #000; display: flex; flex-direction: column; }
+        #json-toolbar { height: 40px; background: #161b22; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--border); justify-content: space-between; }
+        textarea { flex: 1; background: #000; color: #7ee787; font-size: 11px; border: none; padding: 10px; font-family: 'Consolas', monospace; resize: none; }
+
+        /* Controls */
+        .btn { background: #21262d; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; transition: 0.2s; }
+        .btn:hover { background: #30363d; border-color: #8b949e; }
+        .btn.active { background: #0d2b33; border-color: var(--neon); color: var(--neon); }
+        .btn.primary { background: #238636; border-color: #238636; color: white; }
+        .btn.danger { background: #b62324; border-color: #b62324; color: white; }
+        .btn.small { padding: 4px 8px; font-size: 11px; }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 10px; color: #8b949e; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
+        .input-row { display: flex; gap: 5px; }
+        input[type='text'], input[type='number'], select { 
+            background: #0d1117; border: 1px solid #30363d; color: var(--text); 
+            padding: 6px 8px; border-radius: 4px; font-size: 12px; width: 100%; 
+        }
+        input:focus, select:focus { outline: none; border-color: var(--neon); }
+        
+        .section-title { font-size: 11px; color: #8b949e; border-bottom: 1px solid #21262d; padding-bottom: 5px; margin: 20px 0 10px 0; text-transform: uppercase; }
+
+        /* Helper classes */
+        .hidden { display: none; }
+        .label-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .color-box { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- LEFT: HIERARCHY -->
+    <div id="hierarchy-panel">
+        <div id="hierarchy-header">Scene Objects</div>
+        <div id="object-list"></div>
+    </div>
+
+    <!-- CENTER: VIEWPORT & TOOLS -->
+    <div id="viewport-container">
+        <div id="toolbar">
+            <button class="btn active" id="btn-translate" onclick="setMode('translate')">Move</button>
+            <button class="btn" id="btn-rotate" onclick="setMode('rotate')">Rotate</button>
+            <button class="btn" id="btn-scale" onclick="setMode('scale')">Scale</button>
+            <div style="width:1px; height:20px; background:#30363d; margin: 0 5px;"></div>
+            
+            <select id="add-type-select" style="width: 100px;">
+                <option value="box">Box</option>
+                <option value="ramp">Ramp</option>
+                <option value="wall">Wall</option>
+            </select>
+            <button class="btn primary" onclick="addObject()">+ Add</button>
+            
+            <div style="flex:1"></div>
+            <label style="font-size:11px; display:flex; align-items:center; gap:5px;">
+                <input type="checkbox" id="snap-toggle" checked onchange="updateSnapSettings()"> Snap to Grid
+            </label>
+        </div>
+        <canvas id="renderCanvas"></canvas>
+        
+        <div id="json-output-container">
+            <div id="json-toolbar">
+                <span style="font-size:12px; color:#8b949e;">MAP_DATA JSON Output</span>
+                <button class="btn small" onclick="copyToClipboard()">Copy JSON</button>
+            </div>
+            <textarea id="json-output" readonly></textarea>
+        </div>
+    </div>
+
+    <!-- RIGHT: INSPECTOR -->
+    <div id="inspector-panel">
+        <div style="padding: 15px; border-bottom: 1px solid var(--border); background: #161b22;">
+            <h2 style="margin:0; font-size:14px; letter-spacing:1px;">INSPECTOR</h2>
+        </div>
+        <div id="inspector-content">
+            <div id="no-select-msg" style="color:#8b949e; text-align:center; margin-top:50px;">Select an object to edit</div>
+            
+            <div id="inspector-form" class="hidden">
+                <div class="input-group">
+                    <div class="label-flex">
+                        <label>Object Type</label>
+                        <span id="obj-type-display" style="font-size:10px; color:var(--neon); text-transform:uppercase;"></span>
+                    </div>
+                    <input type="text" id="i-seed" onchange="updateMeshFromUI()">
+                </div>
+
+                <div class="section-title">Transform</div>
+                
+                <div class="input-group">
+                    <label>Position (X Y Z)</label>
+                    <div class="input-row">
+                        <input type="number" id="i-x" step="0.5" oninput="updateMeshFromUI()">
+                        <input type="number" id="i-y" step="0.5" oninput="updateMeshFromUI()">
+                        <input type="number" id="i-z" step="0.5" oninput="updateMeshFromUI()">
+                    </div>
+                </div>
+
+                <div id="rotation-group" class="input-group">
+                    <label>Rotation (X Z) [Radians]</label>
+                    <div class="input-row">
+                        <input type="number" id="i-rx" step="0.1" oninput="updateMeshFromUI()" placeholder="X (Pitch)">
+                        <input type="number" id="i-rz" step="0.1" oninput="updateMeshFromUI()" placeholder="Z (Roll)">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Dimensions (W H D)</label>
+                    <div class="input-row">
+                        <input type="number" id="i-w" step="0.5" oninput="updateMeshFromUI()" placeholder="W">
+                        <input type="number" id="i-h" step="0.5" oninput="updateMeshFromUI()" placeholder="H">
+                        <input type="number" id="i-d" step="0.5" oninput="updateMeshFromUI()" placeholder="D">
+                    </div>
+                </div>
+
+                <div style="margin-top:20px;">
+                    <button class="btn danger small" style="width:100%;" onclick="deleteSelected()">Delete Object</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/materialsLibrary/babylon.gridMaterial.min.js"></script>
+
+<script>
+    // --- SETUP ---
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true);
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color3(0.02, 0.02, 0.03);
+
+    // Camera
+    const camera = new BABYLON.ArcRotateCamera("cam", -Math.PI/2, Math.PI/3, 100, BABYLON.Vector3.Zero(), scene);
+    camera.attachControl(canvas, true);
+    camera.lowerRadiusLimit = 5;
+    camera.upperRadiusLimit = 300;
+
+    // Lighting
+    const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene);
+    hemi.intensity = 0.7;
+    const dir = new BABYLON.DirectionalLight("dir", new BABYLON.Vector3(-1, -2, -1), scene);
+    dir.intensity = 0.5;
+
+    // Ground
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 500, height: 500}, scene);
+    const gridMat = new BABYLON.GridMaterial("gridMat", scene);
+    gridMat.majorUnitFrequency = 5;
+    gridMat.minorUnitVisibility = 0.3;
+    gridMat.gridRatio = 1;
+    gridMat.backFaceCulling = false;
+    gridMat.mainColor = new BABYLON.Color3(0.05, 0.1, 0.1);
+    gridMat.lineColor = new BABYLON.Color3(0, 0.5, 0.3);
+    gridMat.opacity = 0.98;
+    ground.material = gridMat;
+
+    // Gizmo Manager
+    const gizmoManager = new BABYLON.GizmoManager(scene);
+    gizmoManager.usePointerToAttachGizmos = false;
+    
+    // Initialize all gizmos to attach listeners
+    gizmoManager.positionGizmoEnabled = true;
+    gizmoManager.rotationGizmoEnabled = true;
+    gizmoManager.scaleGizmoEnabled = true;
+
+    // State
+    let selectedMesh = null;
+    let sceneObjects = [];
+    let objectCounter = 0;
+
+    // Materials
+    const mats = {
+        box: createMat(new BABYLON.Color3(0.1, 0.6, 0.5)),
+        ramp: createMat(new BABYLON.Color3(0.8, 0.5, 0.1)),
+        wall: createMat(new BABYLON.Color3(0.2, 0.3, 0.7))
+    };
+
+    function createMat(color) {
+        const m = new BABYLON.StandardMaterial("", scene);
+        m.diffuseColor = color;
+        m.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+        m.alpha = 0.9;
+        return m;
+    }
+
+    // --- SNAP FUNCTIONALITY (FIXED) ---
+    function updateSnapSettings() {
+        const isSnapEnabled = document.getElementById('snap-toggle').checked;
+        
+        const posSnap = 0.5;    // Snap grid size
+        const rotSnap = Math.PI / 12; // Snap to 15 degrees
+        const scaleSnap = 0.5;
+
+        // Position Gizmo Snap
+        if (gizmoManager.gizmos.positionGizmo) {
+            gizmoManager.gizmos.positionGizmo.snapDistance = isSnapEnabled ? posSnap : 0;
+        }
+        
+        // Rotation Gizmo Snap
+        if (gizmoManager.gizmos.rotationGizmo) {
+            gizmoManager.gizmos.rotationGizmo.snapDistance = isSnapEnabled ? rotSnap : 0;
+        }
+        
+        // Scale Gizmo Snap
+        if (gizmoManager.gizmos.scaleGizmo) {
+            gizmoManager.gizmos.scaleGizmo.snapDistance = isSnapEnabled ? scaleSnap : 0;
+        }
+    }
+
+    // --- LIVE UPDATE & GIZMO EVENTS ---
+    
+    // 1. Update Inspector fields while dragging (Live Feedback)
+    gizmoManager.gizmos.positionGizmo.onDragObservable.add(() => { if(selectedMesh) selectMesh(selectedMesh); });
+    gizmoManager.gizmos.rotationGizmo.onDragObservable.add(() => { if(selectedMesh) selectMesh(selectedMesh); });
+    gizmoManager.gizmos.scaleGizmo.onDragObservable.add(() => { if(selectedMesh) selectMesh(selectedMesh); });
+
+    // 2. Update JSON after dragging ends
+    gizmoManager.gizmos.positionGizmo.onDragEndObservable.add(() => { updateJSON(); });
+    gizmoManager.gizmos.rotationGizmo.onDragEndObservable.add(() => { updateJSON(); });
+    gizmoManager.gizmos.scaleGizmo.onDragEndObservable.add(() => { updateJSON(); });
+
+    // Initialize default mode and snap
+    setMode('translate');
+    updateSnapSettings();
+
+    // --- CORE LOGIC ---
+
+    function addObject() {
+        const type = document.getElementById('add-type-select').value;
+        objectCounter++;
+        const seed = type + "_" + objectCounter;
+        
+        const data = {
+            type: type,
+            seed: seed,
+            x: 0, y: 1, z: 0,
+            w: 5, h: 5, d: 5,
+            rx: 0, rz: 0
+        };
+
+        if (type === 'ramp') {
+            data.w = 6; data.d = 12; data.h = 0.5; 
+            data.rx = 0.22; // Default ramp tilt
+        } else if (type === 'wall') {
+            data.w = 20; data.h = 10; data.d = 2;
+        }
+
+        const mesh = createMeshFromData(data);
+        selectMesh(mesh);
+        updateJSON();
+    }
+
+    function createMeshFromData(data) {
+        const mesh = BABYLON.MeshBuilder.CreateBox(data.seed, {width: 1, height: 1, depth: 1}, scene);
+        
+        mesh.metadata = { 
+            type: data.type, 
+            seed: data.seed,
+            isWall: data.type === 'wall',
+            isRamp: data.type === 'ramp'
+        };
+
+        applyDataToMesh(mesh, data);
+        
+        mesh.material = mats[data.type];
+        sceneObjects.push(mesh);
+        refreshHierarchy();
+        return mesh;
+    }
+
+    function applyDataToMesh(mesh, data) {
+        mesh.position.x = data.x || 0;
+        mesh.position.y = data.y || 0;
+        mesh.position.z = data.z || 0;
+
+        mesh.scaling.x = data.w || 1;
+        mesh.scaling.y = data.h || 1;
+        mesh.scaling.z = data.d || 1;
+
+        mesh.rotation.x = data.rx || 0;
+        mesh.rotation.z = data.rz || 0;
+        mesh.rotation.y = 0; 
+    }
+
+    function selectMesh(mesh) {
+        if (!mesh || mesh.name === "ground") return;
+        selectedMesh = mesh;
+        gizmoManager.attachToMesh(mesh);
+        
+        // UI Updates
+        document.getElementById('no-select-msg').classList.add('hidden');
+        document.getElementById('inspector-form').classList.remove('hidden');
+        
+        document.getElementById('obj-type-display').innerText = mesh.metadata.type;
+        document.getElementById('i-seed').value = mesh.metadata.seed;
+        
+        document.getElementById('i-x').value = mesh.position.x.toFixed(2);
+        document.getElementById('i-y').value = mesh.position.y.toFixed(2);
+        document.getElementById('i-z').value = mesh.position.z.toFixed(2);
+        
+        document.getElementById('i-w').value = mesh.scaling.x.toFixed(2);
+        document.getElementById('i-h').value = mesh.scaling.y.toFixed(2);
+        document.getElementById('i-d').value = mesh.scaling.z.toFixed(2);
+
+        document.getElementById('i-rx').value = mesh.rotation.x.toFixed(3);
+        document.getElementById('i-rz').value = mesh.rotation.z.toFixed(3);
+
+        // Logic for UI limitations based on Game Engine
+        if(mesh.metadata.isRamp) {
+            document.getElementById('i-h').disabled = true;
+            document.getElementById('i-h').style.opacity = 0.5;
+            document.getElementById('rotation-group').classList.remove('hidden');
+        } else {
+            document.getElementById('i-h').disabled = false;
+            document.getElementById('i-h').style.opacity = 1;
+            // Walls in engine code don't support rotation, boxes neither in provided snippet
+            if(mesh.metadata.isWall) document.getElementById('rotation-group').classList.add('hidden');
+            else document.getElementById('rotation-group').classList.remove('hidden');
+        }
+
+        refreshHierarchy();
+    }
+
+    function deselectMesh() {
+        selectedMesh = null;
+        gizmoManager.attachToMesh(null);
+        document.getElementById('no-select-msg').classList.remove('hidden');
+        document.getElementById('inspector-form').classList.add('hidden');
+        refreshHierarchy();
+        updateJSON();
+    }
+
+    function updateMeshFromUI() {
+        if (!selectedMesh) return;
+        
+        selectedMesh.metadata.seed = document.getElementById('i-seed').value;
+        
+        selectedMesh.position.x = parseFloat(document.getElementById('i-x').value) || 0;
+        selectedMesh.position.y = parseFloat(document.getElementById('i-y').value) || 0;
+        selectedMesh.position.z = parseFloat(document.getElementById('i-z').value) || 0;
+
+        selectedMesh.scaling.x = parseFloat(document.getElementById('i-w').value) || 1;
+        selectedMesh.scaling.y = parseFloat(document.getElementById('i-h').value) || 1;
+        selectedMesh.scaling.z = parseFloat(document.getElementById('i-d').value) || 1;
+        
+        selectedMesh.rotation.x = parseFloat(document.getElementById('i-rx').value) || 0;
+        selectedMesh.rotation.z = parseFloat(document.getElementById('i-rz').value) || 0;
+
+        updateJSON();
+    }
+
+    function deleteSelected() {
+        if (!selectedMesh) return;
+        sceneObjects = sceneObjects.filter(o => o !== selectedMesh);
+        selectedMesh.dispose();
+        deselectMesh();
+        updateJSON();
+    }
+
+    // --- RAYCASTING ---
+    scene.onPointerObservable.add((pointerInfo) => {
+        switch (pointerInfo.type) {
+            case BABYLON.PointerEventTypes.POINTERDOWN:
+                if(pointerInfo.pickInfo.hit && pointerInfo.pickInfo.pickedMesh && pointerInfo.pickInfo.pickedMesh.name !== "ground") {
+                    selectMesh(pointerInfo.pickInfo.pickedMesh);
+                } else if (pointerInfo.pickInfo.pickedMesh && pointerInfo.pickInfo.pickedMesh.name === "ground") {
+                    deselectMesh(); 
+                }
+                break;
+        }
+    });
+
+    // --- UI HELPERS ---
+    function setMode(mode) {
+        gizmoManager.positionGizmoEnabled = (mode === 'translate');
+        gizmoManager.rotationGizmoEnabled = (mode === 'rotate');
+        gizmoManager.scaleGizmoEnabled = (mode === 'scale');
+        
+        document.querySelectorAll('#toolbar .btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + mode).classList.add('active');
+    }
+
+    function refreshHierarchy() {
+        const list = document.getElementById('object-list');
+        list.innerHTML = '';
+        sceneObjects.forEach(obj => {
+            const div = document.createElement('div');
+            div.className = 'obj-item' + (obj === selectedMesh ? ' selected' : '');
+            div.innerHTML = `<span class="color-box" style="background:${mats[obj.metadata.type].diffuseColor.toHexString()}"></span> ${obj.metadata.seed}`;
+            div.onclick = () => selectMesh(obj);
+            list.appendChild(div);
+        });
+    }
+
+    // --- JSON LOGIC ---
+    function updateJSON() {
+        const data = {
+            ground: { w: 500, h: 500, seed: "cyberground" },
+            walls: [],
+            structures: []
+        };
+
+        sceneObjects.forEach(mesh => {
+            const d = {
+                w: parseFloat(mesh.scaling.x.toFixed(2)),
+                h: parseFloat(mesh.scaling.y.toFixed(2)),
+                d: parseFloat(mesh.scaling.z.toFixed(2)),
+                x: parseFloat(mesh.position.x.toFixed(2)),
+                y: parseFloat(mesh.position.y.toFixed(2)),
+                z: parseFloat(mesh.position.z.toFixed(2)),
+                seed: mesh.metadata.seed
+            };
+
+            if (mesh.metadata.isRamp) {
+                d.type = "ramp";
+                d.rx = parseFloat(mesh.rotation.x.toFixed(3));
+                d.rz = parseFloat(mesh.rotation.z.toFixed(3));
+                data.structures.push(d);
+            } 
+            else if (mesh.metadata.isWall) {
+                // Walls typically don't have rotation in the provided engine code
+                data.walls.push(d);
+            } 
+            else {
+                d.type = "box";
+                // Include rotation in JSON just in case, engine can ignore it
+                if (mesh.rotation.x !== 0 || mesh.rotation.z !== 0) {
+                    d.rx = parseFloat(mesh.rotation.x.toFixed(3));
+                    d.rz = parseFloat(mesh.rotation.z.toFixed(3));
+                }
+                data.structures.push(d);
+            }
+        });
+
+        document.getElementById('json-output').value = JSON.stringify(data, null, 2);
+    }
+
+    function copyToClipboard() {
+        const txt = document.getElementById('json-output');
+        txt.select();
+        document.execCommand("copy");
+        const btn = document.querySelector('#json-toolbar .btn');
+        const oldText = btn.innerText;
+        btn.innerText = "Copied!";
+        setTimeout(() => btn.innerText = oldText, 1000);
+    }
+
+    // --- START ---
+    engine.runRenderLoop(() => scene.render());
+    window.addEventListener("resize", () => engine.resize());
+
+</script>
+</body>
+</html>
