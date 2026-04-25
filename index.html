@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8"/>
-<title>CYBER STRIKE 3.6 PRECISION</title>
+<title>CYBER STRIKE 3.7 PRECISION</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -95,15 +95,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 .kbd{font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 8px;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.55);min-width:36px;text-align:center;background:rgba(255,255,255,.03);}
 .kbd-desc{font-size:12px;color:rgba(255,255,255,.3);letter-spacing:.5px;}
 
+/* SCOPE CSS - Darker edges, clear center */
 #scope{position:fixed;inset:0;pointer-events:none;z-index:95;display:none;}
 #scope-overlay{position:absolute;inset:0;background:transparent;}
 #scope-circle {
     position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     width:90vmin;height:90vmin;border-radius:50%;
-    border: 2px solid rgba(255,255,255,0.15);
-    box-shadow: 0 0 0 9999px rgba(0,0,0,0.25);
+    border: 2px solid rgba(255,255,255,0.2);
+    /* Darker overlay: changed from 0.25 to 0.55 opacity */
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
 }
-#scope-h,#scope-v{position:absolute;background:rgba(0,0,0,0.6);}
+#scope-h,#scope-v{position:absolute;background:rgba(0,0,0,0.7);}
 #scope-h{width:100%;height:1px;top:50%;left:0;}
 #scope-v{width:1px;height:100%;left:50%;top:0;}
 #scope-dot {
@@ -398,23 +400,21 @@ try {
     const _v = new BABYLON.Vector3(), _r = new BABYLON.Vector3(), _u = BABYLON.Vector3.Up();
 
     // ENEMY - PIXEL PERFECT (MESH BASED)
-    // We no longer use separate hitboxes. We use the visual meshes.
     let eNode = null, eMuzzle = null, eBodyParts = [], eHPBar = null, eHPF = null, eHP = 100, eVis = true, eTP = new BABYLON.Vector3(), eTR = 0;
     
     function buildEnemy() {
         if(eNode) { eNode.getChildMeshes().forEach(m=>m.dispose()); eNode.dispose(); }
         eNode = new BABYLON.TransformNode("er", scene);
-        eBodyParts = []; // Reset body parts array
+        eBodyParts = []; 
 
         const eM = mat("#681818", 0.08); eM.emissiveColor = new BABYLON.Color3(0.1,0.02,0.02);
         
-        // Helper to create visual meshes that are ALSO pickable
         const addV = (n, s, p, type) => { 
             const m = BABYLON.MeshBuilder.CreateBox(n, s, scene); 
             m.parent = eNode; m.position = p; m.material = eM; 
             m.isPickable = true; 
-            m.hitType = type; // Tag the mesh with its type
-            eBodyParts.push(m); // Add to collision array
+            m.hitType = type; 
+            eBodyParts.push(m); 
             return m;
         };
 
@@ -512,7 +512,7 @@ try {
     function reload() { 
         if(reloading||ammo===30) return; 
         reloading=true; 
-        playReloadSound(); // Play the requested sound
+        playReloadSound(); 
         kf("RELOADING...","event"); 
         const t=document.getElementById("reload-track"), f=document.getElementById("reload-inner"); 
         t.style.display="block"; f.style.transition="none"; f.style.width="0%"; 
@@ -528,27 +528,35 @@ try {
         
         // Bullet Physics
         bulletPool.loop(b => {
-            if(!b||!b.position||b.hasHit) return true;
-            const p = b.position.clone(); const mv = b.velocity.scale(dt); b.position.addInPlace(mv); 
-            b.life -= dt; b.distanceTraveled += mv.length();
-            if(b.life <= 0 || b.distanceTraveled > 260) return true;
+            if(!b||!b.position||b.hasHit) return true; // Already hit? Remove.
+            
+            const p = b.position.clone(); 
+            const mv = b.velocity.scale(dt); 
+            b.position.addInPlace(mv); 
+            b.life -= dt; 
+            b.distanceTraveled += mv.length();
+            
+            if(b.life <= 0 || b.distanceTraveled > 260) return true; // Lifetime/Range expired? Remove.
 
             const d=mv.length(); const dir=mv.normalize();
             
             // Wall Check
             const wR = new BABYLON.Ray(p, dir, d + 0.05);
-            const wH = scene.pickWithRay(wR, m=>m.isWall && !m.hitType); // Ignore enemy body parts
-            if(wH.hit && wH.distance <= d + 0.05){ sparks(wH.pickedPoint, wH.getNormal(), false); b.hasHit=true; return true; }
+            const wH = scene.pickWithRay(wR, m=>m.isWall && !m.hitType); 
+            if(wH.hit && wH.distance <= d + 0.05){ 
+                sparks(wH.pickedPoint, wH.getNormal(), false); 
+                b.hasHit = true; 
+                return true; // Hit wall? Remove bullet.
+            }
 
-            // Enemy Check (Mesh Precise)
-            // We cast a ray that ONLY checks the eBodyParts meshes.
+            // Enemy Check (Pixel Perfect Mesh)
             if(!b.isEnemy && eNode && eVis && eBodyParts.length > 0){
                 const hR = new BABYLON.Ray(p, dir, d);
                 const pI = hR.intersectsMeshes(eBodyParts, false);
                 
                 if(pI.length > 0 && pI[0].distance <= d){ 
                     const hitMesh = pI[0].pickedMesh;
-                    const t = hitMesh.hitType; // Get type from mesh itself (head, body, legs)
+                    const t = hitMesh.hitType; 
                     let dm = DMG[t] || DMG.body; 
                     if(scoped) dm = Math.floor(dm * DMG.scoped);
                     
@@ -556,8 +564,9 @@ try {
                     blood(pI[0].pickedPoint);
                     
                     if(conn?.open) conn.send({type:"hit", amount:dm, headshot:t==="head", legshot:t==="legs"});
-                    b.hasHit=true; 
-                    return true;
+                    
+                    b.hasHit = true;
+                    return true; // Hit player? Remove bullet immediately.
                 }
             }
             
@@ -566,10 +575,12 @@ try {
                 const dist = BABYLON.Vector3.Distance(b.position, camera.position);
                 if(dist < 0.5){ 
                     const rY=b.position.y-camera.position.y+CAM_HEIGHT; let t="body"; if(rY>1.6)t="head"; else if(rY<0.9)t="legs";
-                    takeDmg(DMG[t]); blood(b.position); b.hasHit=true; return true;
+                    takeDmg(DMG[t]); blood(b.position); 
+                    b.hasHit = true;
+                    return true; // Hit self? Remove bullet.
                 }
             }
-            return false;
+            return false; // Keep bullet alive
         });
 
         smokePool.loop(s => {
