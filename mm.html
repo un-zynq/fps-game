@@ -92,11 +92,6 @@
     <!-- CENTER: VIEWPORT & TOOLS -->
     <div id="viewport-container">
         <div id="toolbar">
-            <button class="btn active" id="btn-translate" onclick="setMode('translate')">Move</button>
-            <button class="btn" id="btn-rotate" onclick="setMode('rotate')">Rotate</button>
-            <button class="btn" id="btn-scale" onclick="setMode('scale')">Scale</button>
-            <div style="width:1px; height:20px; background:#30363d; margin: 0 5px;"></div>
-            
             <select id="add-type-select" style="width: 100px;">
                 <option value="box">Box</option>
                 <option value="cylinder">Cylinder</option>
@@ -108,10 +103,6 @@
             <span id="hotkeys-hint">DEL: Delete | F: Focus | CTRL+D: Clone</span>
 
             <button class="btn small danger" onclick="clearSave()" title="Clear Local Storage">Clear</button>
-            
-            <label class="checkbox-wrapper" title="Snap to grid">
-                <input type="checkbox" id="snap-toggle" checked onchange="updateSnapSettings()"> Snap
-            </label>
         </div>
         <canvas id="renderCanvas"></canvas>
         
@@ -156,9 +147,11 @@
                 </div>
 
                 <div id="rotation-group" class="input-group">
-                    <label>Rotation (Y)</label>
+                    <label>Rotation (X Y Z)</label>
                     <div class="input-row">
-                        <input type="number" id="i-ry" step="0.1" oninput="updateMeshFromUI()" placeholder="Yaw">
+                        <input type="number" id="i-rx" step="0.1" oninput="updateMeshFromUI()" placeholder="X">
+                        <input type="number" id="i-ry" step="0.1" oninput="updateMeshFromUI()" placeholder="Y">
+                        <input type="number" id="i-rz" step="0.1" oninput="updateMeshFromUI()" placeholder="Z">
                     </div>
                 </div>
 
@@ -202,7 +195,6 @@
     let objectCounter = 0;
     let isDirty = false; 
     let selectedMesh = null;
-    let currentMode = 'translate';
 
     // --- SETUP ENGINE ---
     const canvas = document.getElementById("renderCanvas");
@@ -267,37 +259,8 @@
     gridMat.opacity = 0.98;
     ground.material = gridMat;
 
-    // --- GIZMO MANAGER (INGEBOUWD) ---
-    const gizmoManager = new BABYLON.GizmoManager(scene);
-    gizmoManager.usePointerToAttachGizmos = false; // We handle selection manually
-    
-    // Maak de pijlen groter (standaard is 1)
-    const GIZMO_SCALE = 2.0; 
-
-    // Callbacks voor updates na draggen
-    function setupGizmoObservers() {
-        // Position Gizmo
-        if (gizmoManager.gizmos.positionGizmo) {
-            gizmoManager.gizmos.positionGizmo.scaleRatio = GIZMO_SCALE;
-            gizmoManager.gizmos.positionGizmo.onDragEndObservable.add(onGizmoDragEnd);
-        }
-        // Rotation Gizmo
-        if (gizmoManager.gizmos.rotationGizmo) {
-            gizmoManager.gizmos.rotationGizmo.scaleRatio = GIZMO_SCALE;
-            gizmoManager.gizmos.rotationGizmo.onDragEndObservable.add(onGizmoDragEnd);
-        }
-        // Scale Gizmo (De ingebouwde)
-        if (gizmoManager.gizmos.scaleGizmo) {
-            gizmoManager.gizmos.scaleGizmo.scaleRatio = GIZMO_SCALE;
-            gizmoManager.gizmos.scaleGizmo.onDragEndObservable.add(onGizmoDragEnd);
-        }
-    }
-
-    const onGizmoDragEnd = () => {
-        if(selectedMesh) selectMesh(selectedMesh); // Update UI
-        updateJSON();
-        triggerSave();
-    };
+    // --- GIZMOS ---
+    // Alle gizmos (arrows) zijn verwijderd. Transformaties gaan via de Inspector.
 
     // --- MATERIALS ---
     function createRandomMaterial(seed) {
@@ -379,57 +342,6 @@
         }
     }
 
-    function updateSnapSettings() {
-        const isSnapEnabled = document.getElementById('snap-toggle').checked;
-        const posSnap = 0.5;
-        const rotSnap = Math.PI / 12;
-        
-        // Apply to all gizmos
-        if (gizmoManager.gizmos.positionGizmo) {
-            gizmoManager.gizmos.positionGizmo.snapDistance = isSnapEnabled ? posSnap : 0;
-        }
-        if (gizmoManager.gizmos.rotationGizmo) {
-            gizmoManager.gizmos.rotationGizmo.snapDistance = isSnapEnabled ? rotSnap : 0;
-        }
-        if (gizmoManager.gizmos.scaleGizmo) {
-            gizmoManager.gizmos.scaleGizmo.scaleRatio = GIZMO_SCALE; // Keep size
-            // Scale gizmo doesn't support snap distance natively in the same way, but uniform scaling helps
-        }
-    }
-
-    // --- MODE SWITCHING ---
-    function setMode(mode) {
-        currentMode = mode;
-        
-        // Reset alles
-        gizmoManager.positionGizmoEnabled = false;
-        gizmoManager.rotationGizmoEnabled = false;
-        gizmoManager.scaleGizmoEnabled = false;
-        gizmoManager.boundingBoxGizmoEnabled = false;
-
-        // Zet de juiste aan
-        if (mode === 'translate') {
-            gizmoManager.positionGizmoEnabled = true;
-        } else if (mode === 'rotate') {
-            gizmoManager.rotationGizmoEnabled = true;
-        } else if (mode === 'scale') {
-            gizmoManager.scaleGizmoEnabled = true;
-        }
-
-        // Koppel opnieuw aan geselecteerd object
-        if (selectedMesh) {
-            gizmoManager.attachToMesh(selectedMesh);
-        }
-
-        // Zet observers en sizes opnieuw (voor de 'lazy loaded' gizmos)
-        setupGizmoObservers();
-        updateSnapSettings();
-
-        // Update UI
-        document.querySelectorAll('#toolbar .btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('btn-' + mode).classList.add('active');
-    }
-
     // --- OBJECT MANAGEMENT ---
     function addMapObject() {
         const type = document.getElementById('add-type-select').value;
@@ -441,6 +353,7 @@
             seed: seed,
             x: 0, y: 1, z: 0,
             w: 5, h: 5, d: 5,
+            rx: 0, ry: 0, rz: 0,
             texture: "",
             collision: true
         };
@@ -503,7 +416,9 @@
             mesh.scaling.z = data.d || 1;
         }
         
+        mesh.rotation.x = data.rx || 0;
         mesh.rotation.y = data.ry || 0;
+        mesh.rotation.z = data.rz || 0;
     }
 
     function updateInspectorValues() {
@@ -511,6 +426,10 @@
         document.getElementById('i-x').value = selectedMesh.position.x.toFixed(2);
         document.getElementById('i-y').value = selectedMesh.position.y.toFixed(2);
         document.getElementById('i-z').value = selectedMesh.position.z.toFixed(2);
+
+        document.getElementById('i-rx').value = selectedMesh.rotation.x.toFixed(2);
+        document.getElementById('i-ry').value = selectedMesh.rotation.y.toFixed(2);
+        document.getElementById('i-rz').value = selectedMesh.rotation.z.toFixed(2);
 
         if (selectedMesh.metadata.isObject) {
             if(selectedMesh.metadata.type === 'cylinder') {
@@ -528,8 +447,7 @@
         if (!mesh || mesh.name === "ground") return;
         selectedMesh = mesh;
         
-        // Koppel Gizmo
-        gizmoManager.attachToMesh(mesh);
+        // Geen gizmo logic meer.
 
         document.getElementById('no-select-msg').classList.add('hidden');
         document.getElementById('inspector-form').classList.remove('hidden');
@@ -544,7 +462,7 @@
             document.getElementById('collision-group').classList.add('hidden');
             document.getElementById('tools-section').classList.add('hidden'); 
             document.getElementById('scale-group').classList.add('hidden');
-            document.getElementById('rotation-group').classList.remove('hidden');
+            document.getElementById('rotation-group').classList.remove('hidden'); 
         } else {
             document.getElementById('i-seed').disabled = false;
             document.getElementById('i-seed').value = mesh.metadata.seed;
@@ -577,8 +495,9 @@
 
     function deselectMesh() {
         selectedMesh = null;
-        gizmoManager.attachToMesh(null);
         
+        // Geen gizmo logic meer.
+
         document.getElementById('no-select-msg').classList.remove('hidden');
         document.getElementById('inspector-form').classList.add('hidden');
         refreshHierarchy();
@@ -615,7 +534,10 @@
         selectedMesh.position.x = parseFloat(document.getElementById('i-x').value) || 0;
         selectedMesh.position.y = parseFloat(document.getElementById('i-y').value) || 0;
         selectedMesh.position.z = parseFloat(document.getElementById('i-z').value) || 0;
+        
+        selectedMesh.rotation.x = parseFloat(document.getElementById('i-rx').value) || 0;
         selectedMesh.rotation.y = parseFloat(document.getElementById('i-ry').value) || 0;
+        selectedMesh.rotation.z = parseFloat(document.getElementById('i-rz').value) || 0;
 
         updateJSON();
         triggerSave();
@@ -641,6 +563,9 @@
             w: selectedMesh.scaling.x,
             h: selectedMesh.scaling.y,
             d: selectedMesh.scaling.z,
+            rx: selectedMesh.rotation.x,
+            ry: selectedMesh.rotation.y,
+            rz: selectedMesh.rotation.z,
             texture: selectedMesh.metadata.texture,
             collision: selectedMesh.metadata.collision
         };
@@ -656,9 +581,6 @@
         if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
             if(pointerInfo.pickInfo.hit && pointerInfo.pickInfo.pickedMesh) {
                 const mesh = pointerInfo.pickInfo.pickedMesh;
-                
-                // Check of we op een gizmo klikken (gizmos hebben geen metadata of naam start niet met ground/spawn)
-                // Babylon's gizmos hebben een eigenschap isGizmo op de internal mesh, maar we checken gewoon of het onze objecten zijn.
                 if (mesh.name === "ground") {
                     deselectMesh(); 
                 } else if (mesh.metadata && (mesh.metadata.isSpawn || mesh.metadata.isObject)) {
@@ -740,11 +662,14 @@
         };
 
         function getSpawnData(mesh) {
-            if(!mesh) return {x:0, y:0, z:0};
+            if(!mesh) return {x:0, y:0, z:0, rx:0, ry:0, rz:0};
             return {
                 x: parseFloat(mesh.position.x.toFixed(2)),
                 y: parseFloat((mesh.position.y - (mesh.scaling.y/2)).toFixed(2)),
-                z: parseFloat(mesh.position.z.toFixed(2))
+                z: parseFloat(mesh.position.z.toFixed(2)),
+                rx: parseFloat(mesh.rotation.x.toFixed(2)),
+                ry: parseFloat(mesh.rotation.y.toFixed(2)),
+                rz: parseFloat(mesh.rotation.z.toFixed(2))
             };
         }
 
@@ -759,7 +684,10 @@
                 position: {
                     x: parseFloat(mesh.position.x.toFixed(2)),
                     y: parseFloat((mesh.position.y - (mesh.scaling.y/2)).toFixed(2)),
-                    z: parseFloat(mesh.position.z.toFixed(2))
+                    z: parseFloat(mesh.position.z.toFixed(2)),
+                    rx: parseFloat(mesh.rotation.x.toFixed(2)),
+                    ry: parseFloat(mesh.rotation.y.toFixed(2)),
+                    rz: parseFloat(mesh.rotation.z.toFixed(2))
                 },
                 size: {},
                 texture: mesh.metadata.texture,
@@ -797,6 +725,9 @@
             if(spawnPoints[key] && data) {
                 spawnPoints[key].position.set(data.x, data.y, data.z);
                 spawnPoints[key].position.y += spawnPoints[key].scaling.y/2;
+                spawnPoints[key].rotation.x = data.rx || 0;
+                spawnPoints[key].rotation.y = data.ry || 0;
+                spawnPoints[key].rotation.z = data.rz || 0;
             }
         }
         setSpawnMesh("p1_initial", config.spawns?.player1?.initial);
@@ -814,7 +745,9 @@
                     x: d.position.x,
                     y: d.position.y,
                     z: d.position.z,
-                    ry: d.position.ry || 0
+                    rx: d.position.rx || 0,
+                    ry: d.position.ry || 0,
+                    rz: d.position.rz || 0
                 };
 
                 if(d.type === "cylinder") {
@@ -859,8 +792,6 @@
 
     // --- INITIALIZATION ---
     initSpawnPoints();
-    setMode('translate'); // Start in move mode
-    updateSnapSettings();
     refreshHierarchy();
     loadFromLocalStorage();
     updateJSON();
