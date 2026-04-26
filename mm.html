@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>CYBER STRIKE - Level Architect Pro 3.3</title>
+    <title>CYBER STRIKE - Level Architect Pro 3.8</title>
     <style>
         :root { 
             --neon: #00ffcc; --bg: #05080c; --panel: #0d1117; 
@@ -41,7 +41,6 @@
         #json-output-container { height: 220px; border-top: 1px solid var(--border); background: #000; display: flex; flex-direction: column; }
         #json-toolbar { height: 40px; background: #161b22; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--border); justify-content: space-between; }
         
-        /* Fix for buttons layout */
         .btn-group { display: flex; gap: 5px; }
         
         textarea { flex: 1; background: #000; color: #7ee787; font-size: 11px; border: none; padding: 10px; font-family: 'Consolas', monospace; resize: none; }
@@ -254,8 +253,8 @@
     // --- LIGHTING & GROUND ---
     const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene);
     hemi.intensity = 0.8;
-    const dir = new BABYLON.DirectionalLight("dir", new BABYLON.Vector3(-1, -2, -1), scene);
-    dir.intensity = 0.5;
+    const dirLight = new BABYLON.DirectionalLight("dir", new BABYLON.Vector3(-1, -2, -1), scene);
+    dirLight.intensity = 0.5;
 
     const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 500, height: 500}, scene);
     const gridMat = new BABYLON.GridMaterial("gridMat", scene);
@@ -268,29 +267,37 @@
     gridMat.opacity = 0.98;
     ground.material = gridMat;
 
-    // --- GIZMO MANAGER (FIXED) ---
+    // --- GIZMO MANAGER (INGEBOUWD) ---
     const gizmoManager = new BABYLON.GizmoManager(scene);
-    gizmoManager.usePointerToAttachGizmos = false;
+    gizmoManager.usePointerToAttachGizmos = false; // We handle selection manually
     
-    // Function to handle gizmo drag end updates
+    // Maak de pijlen groter (standaard is 1)
+    const GIZMO_SCALE = 2.0; 
+
+    // Callbacks voor updates na draggen
+    function setupGizmoObservers() {
+        // Position Gizmo
+        if (gizmoManager.gizmos.positionGizmo) {
+            gizmoManager.gizmos.positionGizmo.scaleRatio = GIZMO_SCALE;
+            gizmoManager.gizmos.positionGizmo.onDragEndObservable.add(onGizmoDragEnd);
+        }
+        // Rotation Gizmo
+        if (gizmoManager.gizmos.rotationGizmo) {
+            gizmoManager.gizmos.rotationGizmo.scaleRatio = GIZMO_SCALE;
+            gizmoManager.gizmos.rotationGizmo.onDragEndObservable.add(onGizmoDragEnd);
+        }
+        // Scale Gizmo (De ingebouwde)
+        if (gizmoManager.gizmos.scaleGizmo) {
+            gizmoManager.gizmos.scaleGizmo.scaleRatio = GIZMO_SCALE;
+            gizmoManager.gizmos.scaleGizmo.onDragEndObservable.add(onGizmoDragEnd);
+        }
+    }
+
     const onGizmoDragEnd = () => {
-        if(selectedMesh) selectMesh(selectedMesh); // Refresh UI
+        if(selectedMesh) selectMesh(selectedMesh); // Update UI
         updateJSON();
         triggerSave();
     };
-
-    // We need to re-attach observers whenever gizmos are created/enabled
-    function setupGizmoObservers() {
-        if (gizmoManager.positionGizmo) {
-            gizmoManager.positionGizmo.onDragEndObservable.add(onGizmoDragEnd);
-        }
-        if (gizmoManager.rotationGizmo) {
-            gizmoManager.rotationGizmo.onDragEndObservable.add(onGizmoDragEnd);
-        }
-        if (gizmoManager.boundingBoxGizmo) {
-            gizmoManager.boundingBoxGizmo.onDragEndObservable.add(onGizmoDragEnd);
-        }
-    }
 
     // --- MATERIALS ---
     function createRandomMaterial(seed) {
@@ -377,35 +384,48 @@
         const posSnap = 0.5;
         const rotSnap = Math.PI / 12;
         
-        // Need to check if gizmos exist before setting properties
-        if (gizmoManager.positionGizmo) gizmoManager.positionGizmo.snapDistance = isSnapEnabled ? posSnap : 0;
-        if (gizmoManager.rotationGizmo) gizmoManager.rotationGizmo.snapDistance = isSnapEnabled ? rotSnap : 0;
+        // Apply to all gizmos
+        if (gizmoManager.gizmos.positionGizmo) {
+            gizmoManager.gizmos.positionGizmo.snapDistance = isSnapEnabled ? posSnap : 0;
+        }
+        if (gizmoManager.gizmos.rotationGizmo) {
+            gizmoManager.gizmos.rotationGizmo.snapDistance = isSnapEnabled ? rotSnap : 0;
+        }
+        if (gizmoManager.gizmos.scaleGizmo) {
+            gizmoManager.gizmos.scaleGizmo.scaleRatio = GIZMO_SCALE; // Keep size
+            // Scale gizmo doesn't support snap distance natively in the same way, but uniform scaling helps
+        }
     }
 
     // --- MODE SWITCHING ---
     function setMode(mode) {
         currentMode = mode;
         
-        // Disable all gizmos first
+        // Reset alles
         gizmoManager.positionGizmoEnabled = false;
         gizmoManager.rotationGizmoEnabled = false;
+        gizmoManager.scaleGizmoEnabled = false;
         gizmoManager.boundingBoxGizmoEnabled = false;
-        gizmoManager.scaleGizmoEnabled = false; // Never use standard scale
 
-        // Enable the one we want (this creates the gizmo instance if needed)
-        if (mode === 'translate') gizmoManager.positionGizmoEnabled = true;
-        if (mode === 'rotate') gizmoManager.rotationGizmoEnabled = true;
-        if (mode === 'scale') gizmoManager.boundingBoxGizmoEnabled = true;
+        // Zet de juiste aan
+        if (mode === 'translate') {
+            gizmoManager.positionGizmoEnabled = true;
+        } else if (mode === 'rotate') {
+            gizmoManager.rotationGizmoEnabled = true;
+        } else if (mode === 'scale') {
+            gizmoManager.scaleGizmoEnabled = true;
+        }
 
-        // Attach observers to the newly created gizmo
-        setupGizmoObservers();
-        
-        // Re-attach mesh if one is selected
+        // Koppel opnieuw aan geselecteerd object
         if (selectedMesh) {
             gizmoManager.attachToMesh(selectedMesh);
         }
 
-        // UI Updates
+        // Zet observers en sizes opnieuw (voor de 'lazy loaded' gizmos)
+        setupGizmoObservers();
+        updateSnapSettings();
+
+        // Update UI
         document.querySelectorAll('#toolbar .btn').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-' + mode).classList.add('active');
     }
@@ -486,11 +506,29 @@
         mesh.rotation.y = data.ry || 0;
     }
 
+    function updateInspectorValues() {
+        if (!selectedMesh) return;
+        document.getElementById('i-x').value = selectedMesh.position.x.toFixed(2);
+        document.getElementById('i-y').value = selectedMesh.position.y.toFixed(2);
+        document.getElementById('i-z').value = selectedMesh.position.z.toFixed(2);
+
+        if (selectedMesh.metadata.isObject) {
+            if(selectedMesh.metadata.type === 'cylinder') {
+                if(document.getElementById('i-d')) document.getElementById('i-d').value = selectedMesh.scaling.x.toFixed(2);
+                if(document.getElementById('i-h')) document.getElementById('i-h').value = selectedMesh.scaling.y.toFixed(2);
+            } else {
+                if(document.getElementById('i-w')) document.getElementById('i-w').value = selectedMesh.scaling.x.toFixed(2);
+                if(document.getElementById('i-h')) document.getElementById('i-h').value = selectedMesh.scaling.y.toFixed(2);
+                if(document.getElementById('i-d')) document.getElementById('i-d').value = selectedMesh.scaling.z.toFixed(2);
+            }
+        }
+    }
+
     function selectMesh(mesh) {
         if (!mesh || mesh.name === "ground") return;
         selectedMesh = mesh;
         
-        // Attach Gizmo
+        // Koppel Gizmo
         gizmoManager.attachToMesh(mesh);
 
         document.getElementById('no-select-msg').classList.add('hidden');
@@ -524,25 +562,16 @@
                     <input type="number" id="i-d" step="0.5" oninput="updateMeshFromUI()" placeholder="Diameter">
                     <input type="number" id="i-h" step="0.5" oninput="updateMeshFromUI()" placeholder="Height">
                 `;
-                document.getElementById('i-d').value = mesh.scaling.x.toFixed(2);
-                document.getElementById('i-h').value = mesh.scaling.y.toFixed(2);
             } else {
                 scaleInputs.innerHTML = `
                     <input type="number" id="i-w" step="0.5" oninput="updateMeshFromUI()" placeholder="W">
                     <input type="number" id="i-h" step="0.5" oninput="updateMeshFromUI()" placeholder="H">
                     <input type="number" id="i-d" step="0.5" oninput="updateMeshFromUI()" placeholder="D">
                 `;
-                document.getElementById('i-w').value = mesh.scaling.x.toFixed(2);
-                document.getElementById('i-h').value = mesh.scaling.y.toFixed(2);
-                document.getElementById('i-d').value = mesh.scaling.z.toFixed(2);
             }
         }
 
-        document.getElementById('i-x').value = mesh.position.x.toFixed(2);
-        document.getElementById('i-y').value = mesh.position.y.toFixed(2);
-        document.getElementById('i-z').value = mesh.position.z.toFixed(2);
-        document.getElementById('i-ry').value = mesh.rotation.y.toFixed(2);
-
+        updateInspectorValues();
         refreshHierarchy();
     }
 
@@ -622,16 +651,20 @@
         triggerSave();
     }
 
-    // --- INPUT HANDLING ---
+    // --- INPUT HANDLING (Selection) ---
     scene.onPointerObservable.add((pointerInfo) => {
-        switch (pointerInfo.type) {
-            case BABYLON.PointerEventTypes.POINTERDOWN:
-                if(pointerInfo.pickInfo.hit && pointerInfo.pickInfo.pickedMesh && pointerInfo.pickInfo.pickedMesh.name !== "ground") {
-                    selectMesh(pointerInfo.pickInfo.pickedMesh);
-                } else if (pointerInfo.pickInfo.pickedMesh && pointerInfo.pickInfo.pickedMesh.name === "ground") {
+        if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
+            if(pointerInfo.pickInfo.hit && pointerInfo.pickInfo.pickedMesh) {
+                const mesh = pointerInfo.pickInfo.pickedMesh;
+                
+                // Check of we op een gizmo klikken (gizmos hebben geen metadata of naam start niet met ground/spawn)
+                // Babylon's gizmos hebben een eigenschap isGizmo op de internal mesh, maar we checken gewoon of het onze objecten zijn.
+                if (mesh.name === "ground") {
                     deselectMesh(); 
+                } else if (mesh.metadata && (mesh.metadata.isSpawn || mesh.metadata.isObject)) {
+                    selectMesh(mesh);
                 }
-                break;
+            }
         }
     });
 
@@ -826,7 +859,7 @@
 
     // --- INITIALIZATION ---
     initSpawnPoints();
-    setMode('translate'); // Initialize gizmos
+    setMode('translate'); // Start in move mode
     updateSnapSettings();
     refreshHierarchy();
     loadFromLocalStorage();
