@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>CYBER STRIKE - Level Architect Pro 2.1</title>
+    <title>CYBER STRIKE - Level Architect Pro 3.3</title>
     <style>
         :root { 
             --neon: #00ffcc; --bg: #05080c; --panel: #0d1117; 
@@ -21,8 +21,8 @@
         .list-section { margin-bottom: 15px; }
         .list-section-title { font-size: 10px; color: #8b949e; padding: 5px; text-transform: uppercase; border-bottom: 1px solid #21262d; margin-bottom: 5px; }
         
-        .obj-item { padding: 8px 12px; margin-bottom: 4px; background: #161b22; border-radius: 4px; cursor: pointer; border: 1px solid transparent; font-size: 13px; display: flex; align-items: center; gap: 8px; }
-        .obj-item:hover { border-color: var(--border); }
+        .obj-item { padding: 8px 12px; margin-bottom: 4px; background: #161b22; border-radius: 4px; cursor: pointer; border: 1px solid transparent; font-size: 13px; display: flex; align-items: center; gap: 8px; transition: 0.1s; }
+        .obj-item:hover { border-color: var(--accent); background: #1f242d; }
         .obj-item.selected { background: #0d2b33; border-color: var(--neon); color: var(--neon); }
         .obj-item.spawn-item { background: #161b22; border-left: 3px solid transparent; padding-left: 10px; }
         .obj-item.spawn-item.p1 { border-left-color: var(--p1-color); }
@@ -40,15 +40,20 @@
         /* Bottom: JSON */
         #json-output-container { height: 220px; border-top: 1px solid var(--border); background: #000; display: flex; flex-direction: column; }
         #json-toolbar { height: 40px; background: #161b22; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--border); justify-content: space-between; }
+        
+        /* Fix for buttons layout */
+        .btn-group { display: flex; gap: 5px; }
+        
         textarea { flex: 1; background: #000; color: #7ee787; font-size: 11px; border: none; padding: 10px; font-family: 'Consolas', monospace; resize: none; }
 
         /* Controls */
-        .btn { background: #21262d; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; transition: 0.2s; }
+        .btn { background: #21262d; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
         .btn:hover { background: #30363d; border-color: #8b949e; }
         .btn.active { background: #0d2b33; border-color: var(--neon); color: var(--neon); }
         .btn.primary { background: #238636; border-color: #238636; color: white; }
         .btn.danger { background: #b62324; border-color: #b62324; color: white; }
         .btn.small { padding: 4px 8px; font-size: 11px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 10px; color: #8b949e; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
@@ -69,6 +74,8 @@
         
         #save-indicator { font-size: 10px; color: #8b949e; opacity: 0; transition: opacity 0.3s; }
         #save-indicator.show { opacity: 1; color: var(--neon); }
+
+        #hotkeys-hint { font-size: 10px; color: #555; margin-left: auto; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -99,9 +106,11 @@
             
             <div style="flex:1"></div>
             
-            <button class="btn small danger" onclick="clearSave()" title="Clear Local Storage">Clear Save</button>
+            <span id="hotkeys-hint">DEL: Delete | F: Focus | CTRL+D: Clone</span>
+
+            <button class="btn small danger" onclick="clearSave()" title="Clear Local Storage">Clear</button>
             
-            <label class="checkbox-wrapper">
+            <label class="checkbox-wrapper" title="Snap to grid">
                 <input type="checkbox" id="snap-toggle" checked onchange="updateSnapSettings()"> Snap
             </label>
         </div>
@@ -110,8 +119,9 @@
         <div id="json-output-container">
             <div id="json-toolbar">
                 <span style="font-size:12px; color:#8b949e;">GAME_CONFIG JSON</span>
-                <div>
-                    <button class="btn small" onclick="loadFromJSON()" style="margin-right:5px;">Load JSON</button>
+                <div class="btn-group">
+                    <button class="btn small" onclick="loadFromJSON()">Load JSON</button>
+                    <button class="btn small" onclick="toggleMinify()" id="btn-minify">Minify</button>
                     <button class="btn small primary" onclick="copyToClipboard()">Copy JSON</button>
                 </div>
             </div>
@@ -155,9 +165,7 @@
 
                 <div id="scale-group" class="input-group">
                     <label>Size (W H D) or (D H)</label>
-                    <div class="input-row" id="scale-inputs">
-                        <!-- Filled by JS -->
-                    </div>
+                    <div class="input-row" id="scale-inputs"></div>
                 </div>
 
                 <div id="texture-section" class="section-title">Appearance</div>
@@ -174,8 +182,10 @@
                     </label>
                 </div>
 
-                <div id="delete-btn-container" style="margin-top:20px;">
-                    <button class="btn danger small" style="width:100%;" onclick="deleteSelected()">Delete Object</button>
+                <div id="tools-section" class="section-title">Tools</div>
+                <div class="input-row">
+                     <button class="btn small" style="flex:1" onclick="duplicateSelected()" id="btn-duplicate">Duplicate Object</button>
+                     <button class="btn small danger" style="flex:1" onclick="deleteSelected()">Delete</button>
                 </div>
             </div>
         </div>
@@ -186,87 +196,67 @@
 <script src="https://cdn.babylonjs.com/materialsLibrary/babylon.gridMaterial.min.js"></script>
 
 <script>
-    // --- SETUP ---
+    // --- STATE VARIABLES ---
+    let minifyJson = false;
+    let sceneObjects = []; 
+    let spawnPoints = {}; 
+    let objectCounter = 0;
+    let isDirty = false; 
+    let selectedMesh = null;
+    let currentMode = 'translate';
+
+    // --- SETUP ENGINE ---
     const canvas = document.getElementById("renderCanvas");
     const engine = new BABYLON.Engine(canvas, true);
     const scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color3(0.02, 0.02, 0.03);
 
-    // Camera Setup
+    // --- CAMERA ---
     const camera = new BABYLON.ArcRotateCamera("cam", -Math.PI/2, Math.PI/3, 100, BABYLON.Vector3.Zero(), scene);
     camera.attachControl(canvas, true);
-    camera.lowerRadiusLimit = 5;
-    camera.upperRadiusLimit = 300;
-    camera.wheelPrecision = 10; 
+    camera.lowerRadiusLimit = 2;
+    camera.upperRadiusLimit = 500;
+    camera.wheelPrecision = 20; 
     camera.panningSensibility = 100;
 
-    // --- ZOOM TO CURSOR LOGIC (INVERTED) ---
-    let isPanning = false;
-    
-    // 1. Detach default scroll zoom
+    // --- ZOOM TO MOUSE LOGIC ---
     camera.inputs.attached.mousewheel.detachControl();
     
-    // 2. Add custom event listener
     canvas.addEventListener("wheel", (event) => {
         event.preventDefault();
-        
-        // Pick point under mouse
         const pickResult = scene.pick(scene.pointerX, scene.pointerY);
-        
-        if (pickResult.hit && !isPanning) {
-            const targetPoint = pickResult.pickedPoint;
-            
-            // Calculate direction from camera to target
-            const direction = targetPoint.subtract(camera.position).normalize();
-            const distance = BABYLON.Vector3.Distance(camera.position, targetPoint);
-            
-            // INVERTED SCROLL LOGIC:
-            // event.deltaY < 0 means wheel UP on mouse -> Zoom IN (move forward)
-            // event.deltaY > 0 means wheel DOWN on mouse -> Zoom OUT (move backward)
-            // Normally deltaY > 0 moves camera forward (closer). We invert this.
-            
-            const zoomDelta = event.deltaY * -0.1; // Inverted multiplier
-            
-            // Scale speed by distance so zoom feels consistent
-            const zoomSpeed = distance * (zoomDelta / 100); 
+        const delta = event.deltaY;
+        const zoomFactor = 0.001; 
+        const distance = camera.radius;
+        const amount = distance * delta * zoomFactor;
 
-            // Move camera along that direction
-            camera.position.addInPlace(direction.scale(zoomSpeed));
+        if (pickResult.hit && pickResult.pickedPoint) {
+            const hitPoint = pickResult.pickedPoint;
+            const direction = hitPoint.subtract(camera.position).normalize();
             
-            // Update radius to keep constraints
-            const newDist = BABYLON.Vector3.Distance(camera.position, camera.target);
-            camera.radius = Math.max(camera.lowerRadiusLimit, Math.min(camera.upperRadiusLimit, newDist));
-            
-        } else {
-            // Fallback default zoom if no ground hit
-            // Also inverted
-            if (event.deltaY < 0) {
-                camera.radius *= 1.1; // Wheel Up -> Zoom Out
-            } else {
-                camera.radius *= 0.9; // Wheel Down -> Zoom In
+            camera.position.addInPlace(direction.scale(amount));
+            camera.radius = BABYLON.Vector3.Distance(camera.position, camera.target);
+
+            if (camera.radius < camera.lowerRadiusLimit) {
+                const dir = camera.target.subtract(camera.position).normalize();
+                camera.position = camera.target.subtract(dir.scale(camera.lowerRadiusLimit));
+                camera.radius = camera.lowerRadiusLimit;
+            } else if (camera.radius > camera.upperRadiusLimit) {
+                const dir = camera.target.subtract(camera.position).normalize();
+                camera.position = camera.target.subtract(dir.scale(camera.upperRadiusLimit));
+                camera.radius = camera.upperRadiusLimit;
             }
+        } else {
+            camera.radius += amount;
         }
     }, { passive: false });
 
-    // Track panning state to disable zoom-during-pan
-    scene.onPointerObservable.add((pointerInfo) => {
-        if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
-            if (pointerInfo.event.button === 2 || pointerInfo.event.button === 1) { 
-                isPanning = true;
-            }
-        }
-        if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERUP) {
-            isPanning = false;
-        }
-    });
-
-    // Lighting
+    // --- LIGHTING & GROUND ---
     const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene);
     hemi.intensity = 0.8;
     const dir = new BABYLON.DirectionalLight("dir", new BABYLON.Vector3(-1, -2, -1), scene);
     dir.intensity = 0.5;
 
-    // Ground Grid
     const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 500, height: 500}, scene);
     const gridMat = new BABYLON.GridMaterial("gridMat", scene);
     gridMat.majorUnitFrequency = 5;
@@ -278,24 +268,37 @@
     gridMat.opacity = 0.98;
     ground.material = gridMat;
 
-    // Gizmo Manager & Immediate Initialization
+    // --- GIZMO MANAGER (FIXED) ---
     const gizmoManager = new BABYLON.GizmoManager(scene);
     gizmoManager.usePointerToAttachGizmos = false;
-    gizmoManager.positionGizmoEnabled = true;
-    gizmoManager.rotationGizmoEnabled = true;
-    gizmoManager.scaleGizmoEnabled = true;
+    
+    // Function to handle gizmo drag end updates
+    const onGizmoDragEnd = () => {
+        if(selectedMesh) selectMesh(selectedMesh); // Refresh UI
+        updateJSON();
+        triggerSave();
+    };
 
-    // State
-    let selectedMesh = null;
-    let sceneObjects = []; 
-    let spawnPoints = {}; 
-    let objectCounter = 0;
-    let isDirty = false; 
+    // We need to re-attach observers whenever gizmos are created/enabled
+    function setupGizmoObservers() {
+        if (gizmoManager.positionGizmo) {
+            gizmoManager.positionGizmo.onDragEndObservable.add(onGizmoDragEnd);
+        }
+        if (gizmoManager.rotationGizmo) {
+            gizmoManager.rotationGizmo.onDragEndObservable.add(onGizmoDragEnd);
+        }
+        if (gizmoManager.boundingBoxGizmo) {
+            gizmoManager.boundingBoxGizmo.onDragEndObservable.add(onGizmoDragEnd);
+        }
+    }
 
-    // Materials
-    const defaultMat = new BABYLON.StandardMaterial("defaultMat", scene);
-    defaultMat.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
-    defaultMat.alpha = 0.9;
+    // --- MATERIALS ---
+    function createRandomMaterial(seed) {
+        const mat = new BABYLON.StandardMaterial("mat_" + seed + "_" + Math.random(), scene);
+        mat.diffuseColor = new BABYLON.Color3(Math.random()*0.5+0.5, Math.random()*0.5+0.5, Math.random()*0.5+0.5);
+        mat.alpha = 0.9;
+        return mat;
+    }
 
     const spawnMats = {
         p1_initial: createSpawnMat("#4af"),
@@ -311,15 +314,6 @@
         m.alpha = 0.6;
         return m;
     }
-
-    // --- GIZMO EVENTS ---
-    gizmoManager.gizmos.positionGizmo.onDragObservable.add(() => { if(selectedMesh) selectMesh(selectedMesh); });
-    gizmoManager.gizmos.rotationGizmo.onDragObservable.add(() => { if(selectedMesh) selectMesh(selectedMesh); });
-    gizmoManager.gizmos.scaleGizmo.onDragObservable.add(() => { if(selectedMesh) selectMesh(selectedMesh); });
-
-    gizmoManager.gizmos.positionGizmo.onDragEndObservable.add(() => { updateJSON(); triggerSave(); });
-    gizmoManager.gizmos.rotationGizmo.onDragEndObservable.add(() => { updateJSON(); triggerSave(); });
-    gizmoManager.gizmos.scaleGizmo.onDragEndObservable.add(() => { updateJSON(); triggerSave(); });
 
     // --- INIT SPAWN POINTS ---
     function initSpawnPoints() {
@@ -339,10 +333,11 @@
         });
     }
 
-    // --- SAVE/LOAD SYSTEM ---
+    // --- SYSTEM FUNCTIONS ---
     function triggerSave() {
         isDirty = true;
-        setTimeout(() => {
+        clearTimeout(window.saveTimeout);
+        window.saveTimeout = setTimeout(() => {
             if(isDirty) {
                 saveToLocalStorage();
                 isDirty = false;
@@ -371,25 +366,51 @@
     }
 
     function clearSave() {
-        if(confirm("Are you sure you want to delete the local save? This cannot be undone.")) {
+        if(confirm("Clear local save and reset scene?")) {
             localStorage.removeItem('levelArchitectSave');
             location.reload();
         }
     }
 
-    // --- SNAP SETTINGS ---
     function updateSnapSettings() {
         const isSnapEnabled = document.getElementById('snap-toggle').checked;
         const posSnap = 0.5;
         const rotSnap = Math.PI / 12;
         
-        if (gizmoManager.gizmos.positionGizmo) gizmoManager.gizmos.positionGizmo.snapDistance = isSnapEnabled ? posSnap : 0;
-        if (gizmoManager.gizmos.rotationGizmo) gizmoManager.gizmos.rotationGizmo.snapDistance = isSnapEnabled ? rotSnap : 0;
-        if (gizmoManager.gizmos.scaleGizmo) gizmoManager.gizmos.scaleGizmo.snapDistance = isSnapEnabled ? posSnap : 0;
+        // Need to check if gizmos exist before setting properties
+        if (gizmoManager.positionGizmo) gizmoManager.positionGizmo.snapDistance = isSnapEnabled ? posSnap : 0;
+        if (gizmoManager.rotationGizmo) gizmoManager.rotationGizmo.snapDistance = isSnapEnabled ? rotSnap : 0;
     }
 
-    // --- CORE LOGIC ---
+    // --- MODE SWITCHING ---
+    function setMode(mode) {
+        currentMode = mode;
+        
+        // Disable all gizmos first
+        gizmoManager.positionGizmoEnabled = false;
+        gizmoManager.rotationGizmoEnabled = false;
+        gizmoManager.boundingBoxGizmoEnabled = false;
+        gizmoManager.scaleGizmoEnabled = false; // Never use standard scale
 
+        // Enable the one we want (this creates the gizmo instance if needed)
+        if (mode === 'translate') gizmoManager.positionGizmoEnabled = true;
+        if (mode === 'rotate') gizmoManager.rotationGizmoEnabled = true;
+        if (mode === 'scale') gizmoManager.boundingBoxGizmoEnabled = true;
+
+        // Attach observers to the newly created gizmo
+        setupGizmoObservers();
+        
+        // Re-attach mesh if one is selected
+        if (selectedMesh) {
+            gizmoManager.attachToMesh(selectedMesh);
+        }
+
+        // UI Updates
+        document.querySelectorAll('#toolbar .btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + mode).classList.add('active');
+    }
+
+    // --- OBJECT MANAGEMENT ---
     function addMapObject() {
         const type = document.getElementById('add-type-select').value;
         objectCounter++;
@@ -427,12 +448,11 @@
         };
 
         applyDataToMesh(mesh, data);
-        mesh.material = defaultMat.clone("mat_"+data.seed);
         
         if(data.texture) {
-            applyTexture(mesh, data.texture);
+             applyTexture(mesh, data.texture);
         } else {
-            mesh.material.diffuseColor = new BABYLON.Color3(Math.random()*0.5+0.5, Math.random()*0.5+0.5, Math.random()*0.5+0.5);
+             mesh.material = createRandomMaterial(data.seed);
         }
 
         sceneObjects.push(mesh);
@@ -442,7 +462,7 @@
 
     function applyTexture(mesh, url) {
         if(!url) return;
-        const mat = new BABYLON.StandardMaterial("texMat", scene);
+        const mat = new BABYLON.StandardMaterial("texMat_" + mesh.name, scene);
         mat.diffuseTexture = new BABYLON.Texture(url, scene);
         mat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         mesh.material = mat;
@@ -469,18 +489,22 @@
     function selectMesh(mesh) {
         if (!mesh || mesh.name === "ground") return;
         selectedMesh = mesh;
-        gizmoManager.attachToMesh(mesh);
         
+        // Attach Gizmo
+        gizmoManager.attachToMesh(mesh);
+
         document.getElementById('no-select-msg').classList.add('hidden');
         document.getElementById('inspector-form').classList.remove('hidden');
-        document.getElementById('delete-btn-container').classList.remove('hidden');
         
+        const dupBtn = document.getElementById('btn-duplicate');
+        dupBtn.disabled = false;
+
         if(mesh.metadata.isSpawn) {
             document.getElementById('i-seed').value = mesh.metadata.spawnType;
             document.getElementById('i-seed').disabled = true;
             document.getElementById('texture-section').classList.add('hidden');
             document.getElementById('collision-group').classList.add('hidden');
-            document.getElementById('delete-btn-container').classList.add('hidden');
+            document.getElementById('tools-section').classList.add('hidden'); 
             document.getElementById('scale-group').classList.add('hidden');
             document.getElementById('rotation-group').classList.remove('hidden');
         } else {
@@ -490,6 +514,7 @@
             document.getElementById('i-texture').value = mesh.metadata.texture;
             document.getElementById('collision-group').classList.remove('hidden');
             document.getElementById('i-collision').checked = mesh.metadata.collision;
+            document.getElementById('tools-section').classList.remove('hidden');
             document.getElementById('scale-group').classList.remove('hidden');
             document.getElementById('rotation-group').classList.remove('hidden');
             
@@ -524,6 +549,7 @@
     function deselectMesh() {
         selectedMesh = null;
         gizmoManager.attachToMesh(null);
+        
         document.getElementById('no-select-msg').classList.remove('hidden');
         document.getElementById('inspector-form').classList.add('hidden');
         refreshHierarchy();
@@ -542,8 +568,7 @@
                 applyTexture(selectedMesh, selectedMesh.metadata.texture);
             } else {
                 if(selectedMesh.material.name.startsWith("texMat")) {
-                     selectedMesh.material = defaultMat.clone("mat_"+Math.random());
-                     selectedMesh.material.diffuseColor = new BABYLON.Color3(Math.random()*0.5+0.5, Math.random()*0.5+0.5, Math.random()*0.5+0.5);
+                     selectedMesh.material = createRandomMaterial(selectedMesh.metadata.seed);
                 }
             }
 
@@ -575,7 +600,29 @@
         triggerSave();
     }
 
-    // --- RAYCASTING ---
+    function duplicateSelected() {
+        if (!selectedMesh || selectedMesh.metadata.isSpawn) return;
+        
+        const data = {
+            type: selectedMesh.metadata.type,
+            seed: selectedMesh.metadata.seed + "_copy",
+            x: selectedMesh.position.x + 2,
+            y: selectedMesh.position.y - (selectedMesh.scaling.y/2), 
+            z: selectedMesh.position.z,
+            w: selectedMesh.scaling.x,
+            h: selectedMesh.scaling.y,
+            d: selectedMesh.scaling.z,
+            texture: selectedMesh.metadata.texture,
+            collision: selectedMesh.metadata.collision
+        };
+
+        const newMesh = createMeshFromData(data);
+        selectMesh(newMesh);
+        updateJSON();
+        triggerSave();
+    }
+
+    // --- INPUT HANDLING ---
     scene.onPointerObservable.add((pointerInfo) => {
         switch (pointerInfo.type) {
             case BABYLON.PointerEventTypes.POINTERDOWN:
@@ -588,25 +635,40 @@
         }
     });
 
-    // --- UI HELPERS ---
-    function setMode(mode) {
-        gizmoManager.positionGizmoEnabled = false;
-        gizmoManager.rotationGizmoEnabled = false;
-        gizmoManager.scaleGizmoEnabled = false;
+    // Keyboard Shortcuts
+    window.addEventListener("keydown", (evt) => {
+        if (evt.target.tagName === "INPUT") return; 
 
-        if(mode === 'translate') gizmoManager.positionGizmoEnabled = true;
-        if(mode === 'rotate') gizmoManager.rotationGizmoEnabled = true;
-        if(mode === 'scale') gizmoManager.scaleGizmoEnabled = true;
-        
-        document.querySelectorAll('#toolbar .btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('btn-' + mode).classList.add('active');
+        if (evt.key === "Delete" || evt.key === "Backspace") {
+            deleteSelected();
+        }
+        if (evt.key === "f" || evt.key === "F") {
+            if (selectedMesh) {
+                camera.setTarget(selectedMesh.position);
+                camera.radius = 20;
+            }
+        }
+        if (evt.ctrlKey && evt.key === "d") {
+            evt.preventDefault(); 
+            duplicateSelected();
+        }
+        if (evt.key === "Escape") {
+            deselectMesh();
+        }
+    });
+
+    // --- UI HELPERS ---
+    function toggleMinify() {
+        minifyJson = !minifyJson;
+        const btn = document.getElementById('btn-minify');
+        btn.innerText = minifyJson ? "Pretty" : "Minify";
+        updateJSON();
     }
 
     function refreshHierarchy() {
         const list = document.getElementById('object-list');
         list.innerHTML = '';
 
-        // Spawns
         const spawnSection = document.createElement('div');
         spawnSection.className = 'list-section';
         spawnSection.innerHTML = '<div class="list-section-title">Spawn Points</div>';
@@ -621,14 +683,13 @@
         });
         list.appendChild(spawnSection);
 
-        // Objects
         const objSection = document.createElement('div');
         objSection.className = 'list-section';
         objSection.innerHTML = '<div class="list-section-title">Map Objects</div>';
         sceneObjects.forEach(obj => {
             const div = document.createElement('div');
             div.className = 'obj-item' + (obj === selectedMesh ? ' selected' : '');
-            div.innerHTML = `<span class="color-box" style="background:${obj.material.diffuseColor ? obj.material.diffuseColor.toHexString() : '#fff'}"></span> ${obj.metadata.seed}`;
+            div.innerHTML = `<span class="color-box" style="background:${obj.material && obj.material.diffuseColor ? obj.material.diffuseColor.toHexString() : '#fff'}"></span> ${obj.metadata.seed}`;
             div.onclick = () => selectMesh(obj);
             objSection.appendChild(div);
         });
@@ -636,7 +697,6 @@
     }
 
     // --- JSON LOGIC ---
-
     function generateConfigObject() {
         const config = {
             spawns: {
@@ -689,7 +749,11 @@
 
     function updateJSON() {
         const data = generateConfigObject();
-        document.getElementById('json-output').value = JSON.stringify(data, null, 2);
+        if(minifyJson) {
+            document.getElementById('json-output').value = JSON.stringify(data);
+        } else {
+            document.getElementById('json-output').value = JSON.stringify(data, null, 2);
+        }
     }
 
     function applyConfig(config, resetCamera = true) {
@@ -760,16 +824,12 @@
         setTimeout(() => btn.innerText = oldText, 1000);
     }
 
-    // --- INIT SEQUENCE ---
+    // --- INITIALIZATION ---
     initSpawnPoints();
-    setMode('translate');
+    setMode('translate'); // Initialize gizmos
     updateSnapSettings();
     refreshHierarchy();
-    
-    // Load saved map after setup
     loadFromLocalStorage();
-    
-    // Update JSON display
     updateJSON();
 
     engine.runRenderLoop(() => scene.render());
