@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8"/>
-<title>CYBER STRIKE 6.0 // STABLE BUILD</title>
+<title>CYBER STRIKE 7.4 // TATTOO FIX</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -118,7 +118,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 <div id="scoreboard"><div class="sb-block you"><div class="sb-name">YOU</div><div class="sb-num" id="myKills">0</div></div><div class="sb-sep">:</div><div class="sb-block them"><div class="sb-name">ENEMY</div><div class="sb-num" id="theirKills">0</div></div></div>
 <div id="killfeed"></div>
 <div id="hud"><div id="hud-left"><div class="hud-label">Health</div><div id="hp-wrap"><div id="hp-bar"><div id="hp-inner" style="width:100%"></div></div><div id="hp-num">100</div></div></div><div id="ammo-block"><div class="hud-label">Ammo</div><div id="ammo-cur">30</div><div id="ammo-max">/ 30</div><div id="reload-track"><div id="reload-inner"></div></div></div></div>
-<div id="lobby"><div id="lp"><div class="lp-title">CYBER STRIKE</div><div class="lp-sub">STABLE EDITION</div><span class="field-label">YOUR ID <span style="color:rgba(255,255,255,.15)">(share this)</span></span><div id="myIdDisplay"><span id="myIdTxt">Initialising...</span><span class="copy-tag">COPY</span></div><span class="field-label">CONNECT TO PEER</span><input id="peerInput" placeholder="Paste enemy peer ID..." /><button id="joinBtn" onclick="connect()">ENTER BATTLE</button><div id="conn-status">Waiting for signal...</div><div class="kbd-grid"><div class="kbd-row"><div class="kbd">WASD</div><div class="kbd-desc">Move</div></div><div class="kbd-row"><div class="kbd">LMB</div><div class="kbd-desc">Shoot</div></div><div class="kbd-row"><div class="kbd">SPACE</div><div class="kbd-desc">Jump</div></div><div class="kbd-row"><div class="kbd">F</div><div class="kbd-desc">Scope</div></div><div class="kbd-row"><div class="kbd">R</div><div class="kbd-desc">Reload</div></div><div class="kbd-row"><div class="kbd">SHIFT</div><div class="kbd-desc">Sprint</div></div></div></div></div>
+<div id="lobby"><div id="lp"><div class="lp-title">CYBER STRIKE</div><div class="lp-sub">PACMAN TATTOO EDITION</div><span class="field-label">YOUR ID <span style="color:rgba(255,255,255,.15)">(share this)</span></span><div id="myIdDisplay"><span id="myIdTxt">Initialising...</span><span class="copy-tag">COPY</span></div><span class="field-label">CONNECT TO PEER</span><input id="peerInput" placeholder="Paste enemy peer ID..." /><button id="joinBtn" onclick="connect()">ENTER BATTLE</button><div id="conn-status">Waiting for signal...</div><div class="kbd-grid"><div class="kbd-row"><div class="kbd">WASD</div><div class="kbd-desc">Move</div></div><div class="kbd-row"><div class="kbd">LMB</div><div class="kbd-desc">Shoot</div></div><div class="kbd-row"><div class="kbd">SPACE</div><div class="kbd-desc">Jump</div></div><div class="kbd-row"><div class="kbd">F</div><div class="kbd-desc">Scope</div></div><div class="kbd-row"><div class="kbd">R</div><div class="kbd-desc">Reload</div></div><div class="kbd-row"><div class="kbd">SHIFT</div><div class="kbd-desc">Sprint</div></div></div></div></div>
 
 <script>
 const GAME_CONFIG = {
@@ -155,19 +155,19 @@ try {
     scene.clearColor = new BABYLON.Color4(0.02,0.03,0.05,1);
     scene.collisionsEnabled = true;
 
-    // STABILE CAMERA CONFIG
-    // We gebruiken een camerahoogte van 1.8m.
-    // De ellipsoid (botsingsdoos) is 1.8m hoog (radius 0.9).
-    // We gebruiken ellipsoidOffset om de camera 'bovenop' de botsingsdoos te plaatsen.
-    // Dit voorkomt dat de speler door de grond zakt of rare bounces maakt.
-    const CAM_HEIGHT = 1.8;
+    // AANGEPAST: Camera hoogte naar 1.3 (ooghoogte bij lagere characters)
+    const CAM_HEIGHT = 1.3;
     const camera = new BABYLON.UniversalCamera("cam", new BABYLON.Vector3(0, CAM_HEIGHT, 0), scene);
     camera.minZ = 0.05; camera.maxZ = 2000; camera.inertia = 0; camera.angularSensibility = 500;
     camera.checkCollisions = true;
-    camera.ellipsoid = new BABYLON.Vector3(0.4, 0.9, 0.4); // Radius x, y, z. Hoogte = 1.8m
-    camera.ellipsoidOffset = new BABYLON.Vector3(0, 0.9, 0); // Duw de camera omhoog zodat ogen op 1.8m zijn
+    
+    // AANGEPAST: Ellipsoid aangepast aan nieuwe hoogte (radius Y is helft van hoogte)
+    camera.ellipsoid = new BABYLON.Vector3(0.4, 0.65, 0.4); 
+    // AANGEPAST: Offset zorgt dat de camera (hoofd) bovenop de ellipsoid staat
+    camera.ellipsoidOffset = new BABYLON.Vector3(0, 0.65, 0); 
+    
     camera.keysUp = camera.keysDown = camera.keysLeft = camera.keysRight = [];
-    camera.applyGravity = false; // We doen eigen gravity voor meer controle
+    camera.applyGravity = false;
     camera.attachControl(canvas, true);
 
     function playEnemyGunshot(enemyPos) {
@@ -275,13 +275,11 @@ try {
     let isHost = false;
     const DMG = {standard: 25, scoped: 40};
 
-    // PHYSICS STATE
     let velY=0, grounded=false;
     const grav = -30, jumpSpd = 11;
     const hVel = new BABYLON.Vector3();
     const _v = new BABYLON.Vector3(), _r = new BABYLON.Vector3(), _u = BABYLON.Vector3.Up();
 
-    // ENEMY STATE
     let eRoot = null, eMuzzle = null, eBody = null;
     let eGunPivot = null;
     let eHPBar = null, eHPF = null, eHP = 100, eVis = true;
@@ -294,72 +292,94 @@ try {
         eRoot = new BABYLON.TransformNode("er", scene);
 
         const eggMat = new BABYLON.StandardMaterial("eggMat", scene);
-        eggMat.diffuseColor = new BABYLON.Color3(0.9, 0.75, 0.6); 
-        const hitMat = new BABYLON.StandardMaterial("hit", scene);
-        hitMat.emissiveColor = new BABYLON.Color3(1,0.2,0.2);
-        const skinMat = new BABYLON.StandardMaterial("skinMat", scene);
-        skinMat.diffuseColor = new BABYLON.Color3(1, 0.85, 0.75);
-        const eyeMat = new BABYLON.StandardMaterial("eye", scene); 
-        eyeMat.emissiveColor = new BABYLON.Color3(1,0,0);
+        
+        const bodyTexture = new BABYLON.DynamicTexture("bodyTex", 512, scene);
+        const ctx = bodyTexture.getContext();
+        
+        const skinColor = "#E6BF99";
+        ctx.fillStyle = skinColor;
+        ctx.fillRect(0, 0, 512, 512);
 
-        // BODY
+        const centerX = 256;
+        const centerY = 180; 
+        const radius = 50; 
+        
+        ctx.globalAlpha = 0.5; 
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, 0.25 * Math.PI, 1.75 * Math.PI);
+        ctx.lineTo(centerX, centerY);
+        ctx.fillStyle = "#999999";
+        ctx.fill();
+        ctx.strokeStyle = "#777777";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+        
+        bodyTexture.update();
+        eggMat.diffuseTexture = bodyTexture;
+        eggMat.diffuseTexture.hasAlpha = true;
+        eggMat.diffuseColor = new BABYLON.Color3(1, 1, 1);
+        eggMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+        eggMat.backFaceCulling = true; 
+
         eBody = BABYLON.MeshBuilder.CreateSphere("eggBody", {diameter: 1, segments: 16}, scene);
         eBody.scaling = new BABYLON.Vector3(0.9, 1.3, 0.9); 
         eBody.parent = eRoot;
-        eBody.position.y = 0.8; 
+        // AANGEPAST: lichaam center op 0.65 (halve hoogte) zodat voeten op Y=0 staan
+        eBody.position.y = 0.65; 
         eBody.material = eggMat;
         eBody.isPickable = true; 
 
-        // EYES
-        const lEye = BABYLON.MeshBuilder.CreateSphere("lEye", {diameter: 0.1}, scene);
-        lEye.parent = eBody; lEye.position.set(-0.15, 0.25, -0.35); lEye.material = eyeMat;
-        const rEye = BABYLON.MeshBuilder.CreateSphere("rEye", {diameter: 0.1}, scene);
-        rEye.parent = eBody; rEye.position.set(0.15, 0.25, -0.35); rEye.material = eyeMat;
+        const handMat = new BABYLON.StandardMaterial("handMat", scene);
+        handMat.diffuseColor = new BABYLON.Color3(0.91, 0.71, 0.63); 
+        handMat.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
 
-        // HANDS
-        const createHand = () => {
-            const handRoot = new BABYLON.TransformNode("hand", scene);
-            const palm = BABYLON.MeshBuilder.CreateBox("palm", {width: 0.08, height: 0.04, depth: 0.12}, scene);
-            palm.material = skinMat; palm.parent = handRoot;
-            for(let i=0; i<4; i++) {
-                const f = BABYLON.MeshBuilder.CreateCapsule("finger", {radius: 0.012, height: 0.1}, scene);
-                f.parent = palm; f.position.set(-0.025 + (i*0.018), 0, 0.07);
-                f.rotation.x = Math.PI / 2; f.material = skinMat;
-            }
-            const thumb = BABYLON.MeshBuilder.CreateCapsule("thumb", {radius: 0.015, height: 0.06}, scene);
-            thumb.parent = palm; thumb.position.set(0.05, 0, 0.02);
-            thumb.rotation.z = -0.5; thumb.rotation.x = 0.5; thumb.material = skinMat;
-            return handRoot;
-        };
+        // Handpositie: 0.45 (body radius) + 0.1 (hand radius) = 0.55
+        // Y positie: Iets lager dan het midden van het lichaam (0.65 - 0.15 = 0.5)
+        const rightHand = BABYLON.MeshBuilder.CreateSphere("rightHand", {diameter: 0.18, segments: 12}, scene);
+        rightHand.material = handMat;
+        rightHand.parent = eBody; 
+        rightHand.position.set(0.55, -0.1, 0.0); 
 
-        const rightHand = createHand();
-        rightHand.parent = eRoot;
-        rightHand.position.set(0.55, 0.8, 0);
-        rightHand.rotation.y = Math.PI / 2; 
-        rightHand.rotation.z = -Math.PI / 2;
+        const leftHand = BABYLON.MeshBuilder.CreateSphere("leftHand", {diameter: 0.18, segments: 12}, scene);
+        leftHand.material = handMat;
+        leftHand.parent = eBody;
+        leftHand.position.set(-0.55, -0.1, 0.0);
 
-        const leftHand = createHand();
-        leftHand.parent = eRoot;
-        leftHand.position.set(-0.55, 0.8, 0);
-        leftHand.rotation.y = -Math.PI / 2;
-        leftHand.rotation.z = Math.PI / 2;
-
-        // WEAPON
         const enemyGunMetal = new BABYLON.StandardMaterial("enemyGunMetal", scene);
         enemyGunMetal.diffuseColor = new BABYLON.Color3(0.15, 0.05, 0.05);
-        const gunHighlight = new BABYLON.StandardMaterial("gh", scene); gunHighlight.emissiveColor = new BABYLON.Color3(0.3, 0.1, 0);
+        const gunHighlight = new BABYLON.StandardMaterial("gh", scene); 
+        gunHighlight.emissiveColor = new BABYLON.Color3(0.3, 0.1, 0);
         
         eGunPivot = new BABYLON.TransformNode("eGunPivot", scene); 
-        eGunPivot.parent = eRoot;
-        eGunPivot.position = rightHand.position.clone();
-        eGunPivot.rotation.y = Math.PI; 
-
-        const eGunGrip = new BABYLON.TransformNode("egg", scene); eGunGrip.parent = eGunPivot;
-        createGunParts(eGunGrip, enemyGunMetal, enemyGunMetal, enemyGunMetal, gunHighlight, 0.7);
-        eMuzzle = new BABYLON.TransformNode("em", scene); eMuzzle.parent = eGunGrip; eMuzzle.position = new BABYLON.Vector3(0, 0.07, 0.38);
+        eGunPivot.parent = eBody; 
         
-        eRoot.position.set(0,0,0); eTP.copyFrom(eRoot.position); eVis = true; eAlive = true;
-        eRoot.flashHit = () => { eBody.material = hitMat; setTimeout(() => { eBody.material = eggMat; }, 50); };
+        // AANGEPAST: Wapen naar achteren (Z 0.2 -> 0.05) en naar beneden (Y 0.0 -> -0.06) zodat kolf in hand zit
+        // Hand is op Y -0.1, Z 0.0 (relatief aan lichaam). 
+        // Kolf is lokaal op Z -0.08 (scale 0.7 = -0.056).
+        // Pivot Z = 0.0 - (-0.056) = 0.056.
+        eGunPivot.position.set(0.55, -0.06, 0.05); 
+        
+        eGunPivot.rotation.y = 0; 
+
+        const eGunGrip = new BABYLON.TransformNode("egg", scene); 
+        eGunGrip.parent = eGunPivot;
+        createGunParts(eGunGrip, enemyGunMetal, enemyGunMetal, enemyGunMetal, gunHighlight, 0.7);
+        eMuzzle = new BABYLON.TransformNode("em", scene); 
+        eMuzzle.parent = eGunGrip; 
+        eMuzzle.position = new BABYLON.Vector3(0, 0.07, 0.38);
+        
+        eRoot.position.set(0,0,0); 
+        eTP.copyFrom(eRoot.position); 
+        eVis = true; 
+        eAlive = true;
+        
+        eRoot.flashHit = () => {
+             const orig = eggMat.emissiveColor.clone();
+             eggMat.emissiveColor = new BABYLON.Color3(1, 0.2, 0.2);
+             setTimeout(() => { eggMat.emissiveColor = orig; }, 50);
+        };
     }
 
     function eVisFn(v) { 
@@ -421,9 +441,7 @@ try {
             hitPoint = hit.pickedPoint; hitNormal = hit.getNormal() || BABYLON.Vector3.Up();
             
             if(hit.pickedMesh.name === "eggBody") {
-                // SIMPELE HIT LOGICA (Geen headshots meer)
                 let dm = scoped ? DMG.scoped : DMG.standard;
-                
                 hitReg(hitPoint); 
                 blood(hitPoint);
                 if(conn?.open) conn.send({type:"hit", amount:dm});
@@ -462,7 +480,6 @@ try {
     
     function reload() { if(reloading||ammo===30) return; reloading=true; playReloadSound(); kf("RELOADING...","event"); DOM.reloadTrack.style.display="block"; DOM.reloadInner.style.transition="none"; DOM.reloadInner.style.width="0%"; requestAnimationFrame(() => { DOM.reloadInner.style.transition="width 1.4s linear"; DOM.reloadInner.style.width="100%"; }); setTimeout(() => { ammo=30; reloading=false; DOM.reloadTrack.style.display="none"; DOM.reloadInner.style.width="0%"; updAmmo(); kf("RELOADED","event"); }, 1400); }
 
-    // MAIN LOOP
     let fi=0;
     scene.onBeforeRenderObservable.add(() => {
         const dt = Math.min(engine.getDeltaTime()/1000, 0.05);
@@ -475,23 +492,29 @@ try {
 
         if(!alive) return;
 
-        const spd = K["ShiftLeft"] ? 0.22 : 0.14;
+        const sprinting = K["ShiftLeft"] || K["ShiftRight"];
+        const spd = sprinting ? 0.22 : 0.14;
         const cF = camera.getForwardRay().direction; cF.y=0; cF.normalize();
         BABYLON.Vector3.CrossToRef(_u, cF, _r); _r.normalize();
-        _v.setAll(0); if(K["KeyW"])_v.addInPlace(cF); if(K["KeyS"])_v.subtractInPlace(cF); if(K["KeyA"])_v.subtractInPlace(_r); if(K["KeyD"])_v.addInPlace(_r);
-        if(_v.length()>0) _v.normalize().scaleInPlace(spd);
-        BABYLON.Vector3.LerpToRef(hVel, _v, 0.14, hVel);
+        _v.setAll(0); 
+        if(K["KeyW"])_v.addInPlace(cF); 
+        if(K["KeyS"])_v.subtractInPlace(cF); 
+        if(K["KeyA"])_v.subtractInPlace(_r); 
+        if(K["KeyD"])_v.addInPlace(_r);
+        
+        if(_v.length() > 0) {
+            _v.normalize().scaleInPlace(spd);
+            hVel.copyFrom(_v);
+        } else {
+            hVel.setAll(0);
+        }
 
-        // STABILE PHYSICS
-        // Gebruik de camera positie (die door offset al op ooghoogte is)
-        // Raycast van ooghoogte naar beneden
         const gR = new BABYLON.Ray(camera.position, BABYLON.Vector3.Down(), CAM_HEIGHT + 0.5);
         const gH = scene.pickWithRay(gR, m=>m.checkCollisions);
         
         if(gH.hit && gH.distance <= CAM_HEIGHT + 0.05) {
             grounded = true; velY = 0;
             const targetY = gH.pickedPoint.y + CAM_HEIGHT;
-            // Smooth snap naar grond om jitter te voorkomen
             camera.position.y = BABYLON.Scalar.Lerp(camera.position.y, targetY, 0.5);
         } else { 
             grounded = false; 
@@ -499,8 +522,6 @@ try {
 
         if(K["Space"] && grounded){ velY=jumpSpd; grounded=false; }
         if(!grounded) velY+=grav*dt;
-        
-        // Clamp velocity om "flying" bugs te voorkomen
         velY = Math.max(-50, Math.min(velY, 50));
         
         const fM = hVel.clone(); fM.y=velY*dt;
@@ -509,26 +530,31 @@ try {
         // Enemy Logic
         if(eRoot && eVis && eAlive){ 
             BABYLON.Vector3.LerpToRef(eRoot.position, eTP, 0.2, eRoot.position);
-            let currentRY = eRoot.rotation.y; let diff = eRY - currentRY; while (diff < -Math.PI) diff += Math.PI * 2; while (diff > Math.PI) diff -= Math.PI * 2; eRoot.rotation.y += diff * 0.15;
+            
+            let currentRY = eRoot.rotation.y; 
+            let diff = eRY - currentRY; 
+            while (diff < -Math.PI) diff += Math.PI * 2; 
+            while (diff > Math.PI) diff -= Math.PI * 2; 
+            eRoot.rotation.y += diff * 0.15;
+
             if(eGunPivot) eGunPivot.rotation.x = eRX;
 
-            // Verbeterde hop animatie
             const dist = BABYLON.Vector3.Distance(eRoot.position, eAnimState.lastPos);
             const speed = dist / dt;
             eAnimState.lastPos.copyFrom(eRoot.position);
 
-            if(speed > 0.5) { // Alleen hoppen als we echt snel bewegen (netwerk jitter filter)
+            if(speed > 0.5) { 
                 eAnimState.hopCycle += dt * 12; 
-                const hopHeight = 0.05; // Kleiner hopje
+                const hopHeight = 0.05; 
                 const hop = Math.abs(Math.sin(eAnimState.hopCycle)) * hopHeight;
                 eRoot.position.y = eTP.y + hop;
             } else {
-                // Stilstaand: glad positie behouden
                 eAnimState.hopCycle = 0; 
                 eRoot.position.y = BABYLON.Scalar.Lerp(eRoot.position.y, eTP.y, 0.2);
             }
             
-            if(eHPBar){ eHPBar.position.copyFrom(eRoot.position); eHPBar.position.y += 2.2; }
+            // AANGEPAST: HP bar iets lager omdat enemy kleiner is
+            if(eHPBar){ eHPBar.position.copyFrom(eRoot.position); eHPBar.position.y += 1.5; }
         }
         
         if(conn?.open && fi%2===0 && alive) conn.send({
@@ -541,7 +567,6 @@ try {
     engine.runRenderLoop(() => scene.render());
     window.addEventListener("resize", () => engine.resize());
 
-    // NETWORK
     const peer = new Peer(undefined, { config: { iceServers: [ { urls: "stun:stun.l.google.com:19302" } ] } });
     let conn=null;
     
@@ -577,7 +602,9 @@ try {
                 if(!eRoot) return; 
                 if(d.hp > 0 && !eAlive) { eAlive = true; eVisFn(true); }
                 if(!eAlive) return;
-                eTP.set(d.x, d.y, d.z); eRY = d.ry; if(d.rx != null) eRX = d.rx;
+                eTP.set(d.x, d.y, d.z); 
+                eRY = d.ry; 
+                if(d.rx != null) eRX = d.rx;
                 if(eHPF && d.hp!=null){ eHP = d.hp; eHPF.width = Math.max(0, d.hp)+"%"; }
                 if(!eVis) eVisFn(true); 
             }
