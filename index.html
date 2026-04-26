@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8"/>
-<title>CYBER STRIKE 7.4 // TATTOO FIX</title>
+<title>CYBER STRIKE 7.5 // CUSTOM SKIN</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -118,9 +118,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 <div id="scoreboard"><div class="sb-block you"><div class="sb-name">YOU</div><div class="sb-num" id="myKills">0</div></div><div class="sb-sep">:</div><div class="sb-block them"><div class="sb-name">ENEMY</div><div class="sb-num" id="theirKills">0</div></div></div>
 <div id="killfeed"></div>
 <div id="hud"><div id="hud-left"><div class="hud-label">Health</div><div id="hp-wrap"><div id="hp-bar"><div id="hp-inner" style="width:100%"></div></div><div id="hp-num">100</div></div></div><div id="ammo-block"><div class="hud-label">Ammo</div><div id="ammo-cur">30</div><div id="ammo-max">/ 30</div><div id="reload-track"><div id="reload-inner"></div></div></div></div>
-<div id="lobby"><div id="lp"><div class="lp-title">CYBER STRIKE</div><div class="lp-sub">PACMAN TATTOO EDITION</div><span class="field-label">YOUR ID <span style="color:rgba(255,255,255,.15)">(share this)</span></span><div id="myIdDisplay"><span id="myIdTxt">Initialising...</span><span class="copy-tag">COPY</span></div><span class="field-label">CONNECT TO PEER</span><input id="peerInput" placeholder="Paste enemy peer ID..." /><button id="joinBtn" onclick="connect()">ENTER BATTLE</button><div id="conn-status">Waiting for signal...</div><div class="kbd-grid"><div class="kbd-row"><div class="kbd">WASD</div><div class="kbd-desc">Move</div></div><div class="kbd-row"><div class="kbd">LMB</div><div class="kbd-desc">Shoot</div></div><div class="kbd-row"><div class="kbd">SPACE</div><div class="kbd-desc">Jump</div></div><div class="kbd-row"><div class="kbd">F</div><div class="kbd-desc">Scope</div></div><div class="kbd-row"><div class="kbd">R</div><div class="kbd-desc">Reload</div></div><div class="kbd-row"><div class="kbd">SHIFT</div><div class="kbd-desc">Sprint</div></div></div></div></div>
+<div id="lobby"><div id="lp"><div class="lp-title">CYBER STRIKE</div><div class="lp-sub">CUSTOM SKIN EDITION</div><span class="field-label">YOUR ID <span style="color:rgba(255,255,255,.15)">(share this)</span></span><div id="myIdDisplay"><span id="myIdTxt">Initialising...</span><span class="copy-tag">COPY</span></div><span class="field-label">CONNECT TO PEER</span><input id="peerInput" placeholder="Paste enemy peer ID..." /><button id="joinBtn" onclick="connect()">ENTER BATTLE</button><div id="conn-status">Waiting for signal...</div><div class="kbd-grid"><div class="kbd-row"><div class="kbd">WASD</div><div class="kbd-desc">Move</div></div><div class="kbd-row"><div class="kbd">LMB</div><div class="kbd-desc">Shoot</div></div><div class="kbd-row"><div class="kbd">SPACE</div><div class="kbd-desc">Jump</div></div><div class="kbd-row"><div class="kbd">F</div><div class="kbd-desc">Scope</div></div><div class="kbd-row"><div class="kbd">R</div><div class="kbd-desc">Reload</div></div><div class="kbd-row"><div class="kbd">SHIFT</div><div class="kbd-desc">Sprint</div></div></div></div></div>
 
 <script>
+// --- CONFIG ---
 const GAME_CONFIG = {
   "spawns": {
     "player1": { "initial": { "x": 5, "y": 0, "z": -5 }, "respawn": { "x": 5, "y": 0, "z": 5 } },
@@ -130,6 +131,15 @@ const GAME_CONFIG = {
     { "type": "box", "position": { "x": 0, "y": -0.5, "z": 0 }, "size": { "w": 100, "h": 1, "d": 100 }, "texture": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Grey_rough_granite_rock_seamless_stone_surface_texture.jpg", "collision": true }
   ]
 };
+
+// --- CUSTOM SKIN OPTION ---
+// Plak hier je URL voor een custom skin (PNG met transparantie wordt ondersteund).
+// Laat leeg ("") voor de standaard skin kleur.
+const CUSTOM_ENEMY_SKIN_URL = ""; 
+// Voorbeeld met transparante PNG:
+// const CUSTOM_ENEMY_SKIN_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/560px-PNG_transparency_demonstration_1.png";
+
+// --------------------------
 
 const DOM = {
     myIdTxt: document.getElementById("myIdTxt"), peerInput: document.getElementById("peerInput"), connStatus: document.getElementById("conn-status"),
@@ -155,17 +165,13 @@ try {
     scene.clearColor = new BABYLON.Color4(0.02,0.03,0.05,1);
     scene.collisionsEnabled = true;
 
-    // AANGEPAST: Camera hoogte naar 1.3 (ooghoogte bij lagere characters)
+    // Camera settings: Ooghoogte 1.3m
     const CAM_HEIGHT = 1.3;
     const camera = new BABYLON.UniversalCamera("cam", new BABYLON.Vector3(0, CAM_HEIGHT, 0), scene);
     camera.minZ = 0.05; camera.maxZ = 2000; camera.inertia = 0; camera.angularSensibility = 500;
     camera.checkCollisions = true;
-    
-    // AANGEPAST: Ellipsoid aangepast aan nieuwe hoogte (radius Y is helft van hoogte)
     camera.ellipsoid = new BABYLON.Vector3(0.4, 0.65, 0.4); 
-    // AANGEPAST: Offset zorgt dat de camera (hoofd) bovenop de ellipsoid staat
     camera.ellipsoidOffset = new BABYLON.Vector3(0, 0.65, 0); 
-    
     camera.keysUp = camera.keysDown = camera.keysLeft = camera.keysRight = [];
     camera.applyGravity = false;
     camera.attachControl(canvas, true);
@@ -293,50 +299,41 @@ try {
 
         const eggMat = new BABYLON.StandardMaterial("eggMat", scene);
         
-        const bodyTexture = new BABYLON.DynamicTexture("bodyTex", 512, scene);
-        const ctx = bodyTexture.getContext();
+        // Texture Logic
+        if (CUSTOM_ENEMY_SKIN_URL && CUSTOM_ENEMY_SKIN_URL !== "") {
+            // Load Custom Texture with Transparency Support
+            const texture = new BABYLON.Texture(CUSTOM_ENEMY_SKIN_URL, scene);
+            texture.hasAlpha = true; // Enable alpha channel from the image
+            eggMat.diffuseTexture = texture;
+            eggMat.diffuseColor = new BABYLON.Color3(1, 1, 1); // White base so texture colors are correct
+            // UseAlphaFromDiffuseTexture is true by default when hasAlpha is true on texture in StandardMaterial
+        } else {
+            // Default Skin Color (No Tattoo)
+            const bodyTexture = new BABYLON.DynamicTexture("bodyTex", 512, scene);
+            const ctx = bodyTexture.getContext();
+            ctx.fillStyle = "#E6BF99"; // Skin color
+            ctx.fillRect(0, 0, 512, 512);
+            bodyTexture.update();
+            eggMat.diffuseTexture = bodyTexture;
+            eggMat.diffuseColor = new BABYLON.Color3(1, 1, 1);
+        }
         
-        const skinColor = "#E6BF99";
-        ctx.fillStyle = skinColor;
-        ctx.fillRect(0, 0, 512, 512);
-
-        const centerX = 256;
-        const centerY = 180; 
-        const radius = 50; 
-        
-        ctx.globalAlpha = 0.5; 
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, 0.25 * Math.PI, 1.75 * Math.PI);
-        ctx.lineTo(centerX, centerY);
-        ctx.fillStyle = "#999999";
-        ctx.fill();
-        ctx.strokeStyle = "#777777";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.globalAlpha = 1.0;
-        
-        bodyTexture.update();
-        eggMat.diffuseTexture = bodyTexture;
-        eggMat.diffuseTexture.hasAlpha = true;
-        eggMat.diffuseColor = new BABYLON.Color3(1, 1, 1);
         eggMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         eggMat.backFaceCulling = true; 
 
+        // Body
         eBody = BABYLON.MeshBuilder.CreateSphere("eggBody", {diameter: 1, segments: 16}, scene);
         eBody.scaling = new BABYLON.Vector3(0.9, 1.3, 0.9); 
         eBody.parent = eRoot;
-        // AANGEPAST: lichaam center op 0.65 (halve hoogte) zodat voeten op Y=0 staan
-        eBody.position.y = 0.65; 
+        eBody.position.y = 0.65; // Corrected Y position
         eBody.material = eggMat;
         eBody.isPickable = true; 
 
+        // Hands
         const handMat = new BABYLON.StandardMaterial("handMat", scene);
         handMat.diffuseColor = new BABYLON.Color3(0.91, 0.71, 0.63); 
         handMat.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
 
-        // Handpositie: 0.45 (body radius) + 0.1 (hand radius) = 0.55
-        // Y positie: Iets lager dan het midden van het lichaam (0.65 - 0.15 = 0.5)
         const rightHand = BABYLON.MeshBuilder.CreateSphere("rightHand", {diameter: 0.18, segments: 12}, scene);
         rightHand.material = handMat;
         rightHand.parent = eBody; 
@@ -347,6 +344,7 @@ try {
         leftHand.parent = eBody;
         leftHand.position.set(-0.55, -0.1, 0.0);
 
+        // Weapon
         const enemyGunMetal = new BABYLON.StandardMaterial("enemyGunMetal", scene);
         enemyGunMetal.diffuseColor = new BABYLON.Color3(0.15, 0.05, 0.05);
         const gunHighlight = new BABYLON.StandardMaterial("gh", scene); 
@@ -354,11 +352,7 @@ try {
         
         eGunPivot = new BABYLON.TransformNode("eGunPivot", scene); 
         eGunPivot.parent = eBody; 
-        
-        // AANGEPAST: Wapen naar achteren (Z 0.2 -> 0.05) en naar beneden (Y 0.0 -> -0.06) zodat kolf in hand zit
-        // Hand is op Y -0.1, Z 0.0 (relatief aan lichaam). 
-        // Kolf is lokaal op Z -0.08 (scale 0.7 = -0.056).
-        // Pivot Z = 0.0 - (-0.056) = 0.056.
+        // Gun moved back (Z 0.05) and down (Y -0.06) to align with hand
         eGunPivot.position.set(0.55, -0.06, 0.05); 
         
         eGunPivot.rotation.y = 0; 
@@ -375,6 +369,7 @@ try {
         eVis = true; 
         eAlive = true;
         
+        // Flash effect function
         eRoot.flashHit = () => {
              const orig = eggMat.emissiveColor.clone();
              eggMat.emissiveColor = new BABYLON.Color3(1, 0.2, 0.2);
@@ -527,7 +522,6 @@ try {
         const fM = hVel.clone(); fM.y=velY*dt;
         camera.cameraDirection.copyFrom(fM);
         
-        // Enemy Logic
         if(eRoot && eVis && eAlive){ 
             BABYLON.Vector3.LerpToRef(eRoot.position, eTP, 0.2, eRoot.position);
             
@@ -553,7 +547,6 @@ try {
                 eRoot.position.y = BABYLON.Scalar.Lerp(eRoot.position.y, eTP.y, 0.2);
             }
             
-            // AANGEPAST: HP bar iets lager omdat enemy kleiner is
             if(eHPBar){ eHPBar.position.copyFrom(eRoot.position); eHPBar.position.y += 1.5; }
         }
         
