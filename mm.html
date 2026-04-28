@@ -202,7 +202,7 @@
     const scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color3(0.02, 0.02, 0.03);
 
-    // --- CAMERA ---
+    // --- CAMERA SETUP ---
     const camera = new BABYLON.ArcRotateCamera("cam", -Math.PI/2, Math.PI/3, 100, BABYLON.Vector3.Zero(), scene);
     camera.attachControl(canvas, true);
     camera.lowerRadiusLimit = 2;
@@ -210,36 +210,51 @@
     camera.wheelPrecision = 20; 
     camera.panningSensibility = 100;
 
-    // --- ZOOM TO MOUSE LOGIC ---
+    // --- CUSTOM ZOOM TO MOUSE LOGIC (Improved) ---
+    // We detach the default mousewheel input first
     camera.inputs.attached.mousewheel.detachControl();
-    
+
+    // Add our custom wheel event listener
     canvas.addEventListener("wheel", (event) => {
         event.preventDefault();
+
+        // 1. Pick the point under the mouse
         const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+        
+        // Determine zoom direction and intensity
         const delta = event.deltaY;
-        const zoomFactor = 0.001; 
-        const distance = camera.radius;
-        const amount = distance * delta * zoomFactor;
+        const zoomSpeed = 0.001; // Adjust for feel
+        
+        // Calculate new radius (distance)
+        const currentRadius = camera.radius;
+        // We use exponential zoom for smoother feel near objects
+        const newRadius = BABYLON.Scalar.Clamp(currentRadius * (1 + delta * zoomSpeed), camera.lowerRadiusLimit, camera.upperRadiusLimit);
 
-        if (pickResult.hit && pickResult.pickedPoint) {
-            const hitPoint = pickResult.pickedPoint;
-            const direction = hitPoint.subtract(camera.position).normalize();
-            
-            camera.position.addInPlace(direction.scale(amount));
-            camera.radius = BABYLON.Vector3.Distance(camera.position, camera.target);
-
-            if (camera.radius < camera.lowerRadiusLimit) {
-                const dir = camera.target.subtract(camera.position).normalize();
-                camera.position = camera.target.subtract(dir.scale(camera.lowerRadiusLimit));
-                camera.radius = camera.lowerRadiusLimit;
-            } else if (camera.radius > camera.upperRadiusLimit) {
-                const dir = camera.target.subtract(camera.position).normalize();
-                camera.position = camera.target.subtract(dir.scale(camera.upperRadiusLimit));
-                camera.radius = camera.upperRadiusLimit;
-            }
-        } else {
-            camera.radius += amount;
+        // If we don't hit anything (sky), or we didn't actually zoom, just update radius
+        if (!pickResult.hit || !pickResult.pickedPoint || newRadius === currentRadius) {
+            camera.radius = newRadius;
+            return;
         }
+
+        const mousePoint = pickResult.pickedPoint;
+
+        // 2. Smart Target Interpolation
+        // Instead of just moving the camera position, we move the TARGET slightly towards the mouse point.
+        // This gives the "Zoom to Mouse" effect (the point under cursor stays under cursor)
+        // while keeping the ArcRotateCamera behavior stable (orbiting around the target).
+        
+        // Ratio of how much we zoomed vs total distance
+        // This determines how much we "pull" the target towards the mouse
+        const ratio = 1 - (newRadius / currentRadius);
+
+        // Calculate new target position
+        // Target moves from current target -> mouse point by 'ratio' amount
+        const newTarget = BABYLON.Vector3.Lerp(camera.target, mousePoint, ratio);
+
+        // Apply changes
+        camera.target = newTarget;
+        camera.radius = newRadius;
+
     }, { passive: false });
 
     // --- LIGHTING & GROUND ---
@@ -258,9 +273,6 @@
     gridMat.lineColor = new BABYLON.Color3(0, 0.5, 0.3);
     gridMat.opacity = 0.98;
     ground.material = gridMat;
-
-    // --- GIZMOS ---
-    // Alle gizmos (arrows) zijn verwijderd. Transformaties gaan via de Inspector.
 
     // --- MATERIALS ---
     function createRandomMaterial(seed) {
@@ -447,8 +459,6 @@
         if (!mesh || mesh.name === "ground") return;
         selectedMesh = mesh;
         
-        // Geen gizmo logic meer.
-
         document.getElementById('no-select-msg').classList.add('hidden');
         document.getElementById('inspector-form').classList.remove('hidden');
         
@@ -495,9 +505,6 @@
 
     function deselectMesh() {
         selectedMesh = null;
-        
-        // Geen gizmo logic meer.
-
         document.getElementById('no-select-msg').classList.remove('hidden');
         document.getElementById('inspector-form').classList.add('hidden');
         refreshHierarchy();
